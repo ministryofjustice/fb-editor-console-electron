@@ -12,7 +12,7 @@ const hostile = require('hostile')
 const notifier = require('node-notifier')
 const glob = require('glob')
 const opn = require('opn')
-// const request = require('request-promise-native')
+const request = require('request-promise-native')
 const fs = require('fs')
 const git = require('isomorphic-git')
 git.plugins.set('fs', fs)
@@ -53,7 +53,7 @@ let firstInstall = false
 const services = {}
 
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow, Menu} = require('electron')
 
 app.store = store
 
@@ -84,6 +84,27 @@ const launchApp = () => {
 
     // Open the DevTools.
     // mainWindow.webContents.openDevTools()
+
+    var template = [{
+      label: "Application",
+      submenu: [
+          { label: "About Application", selector: "orderFrontStandardAboutPanel:" },
+          { type: "separator" },
+          { label: "Quit", accelerator: "Command+Q", click: function() { app.quit() }}
+      ]}, {
+      label: "Edit",
+      submenu: [
+          { label: "Undo", accelerator: "CmdOrCtrl+Z", selector: "undo:" },
+          { label: "Redo", accelerator: "Shift+CmdOrCtrl+Z", selector: "redo:" },
+          { type: "separator" },
+          { label: "Cut", accelerator: "CmdOrCtrl+X", selector: "cut:" },
+          { label: "Copy", accelerator: "CmdOrCtrl+C", selector: "copy:" },
+          { label: "Paste", accelerator: "CmdOrCtrl+V", selector: "paste:" },
+          { label: "Select All", accelerator: "CmdOrCtrl+A", selector: "selectAll:" }
+      ]}
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 
     // Emitted when the window is closed.
     mainWindow.on('closed', function () {
@@ -118,9 +139,8 @@ const launchApp = () => {
   })
 
 
-  let portCounter = 52000 // 49152
+  let portCounter = 4500 // 52000 // 49152
   app.launchService = async (service) => {
-    console.log({service})
     const serviceDetails = services[service]
     if (!serviceDetails.port) {
       serviceDetails.port = portCounter++
@@ -130,7 +150,8 @@ const launchApp = () => {
     app.clearPort(serviceDetails.port)
     process.env.XPORT = serviceDetails.port
     process.env.SERVICEDATA = serviceDetails.path
-    let backgroundWindow = new BrowserWindow({show: false}) // {width: 800, height: 600})
+    let backgroundWindow = new BrowserWindow({show: false})
+    // let backgroundWindow = new BrowserWindow({width: 800, height: 600})
     backgroundWindow.loadFile('background.html')
     // backgroundWindow.webContents.openDevTools()
     backgroundWindow.on('closed', function () {
@@ -342,14 +363,14 @@ const createService = async (serviceName, createRepo) => {
     auto_init: false,
     private: false
   }
-  // await request.post({
-  //   url,
-  //   headers: {
-  //     'User-Agent': 'Form Builder v0.1.0',
-  //     'Authorization': `token ${token}`
-  //   },
-  //   json
-  // })
+  await request.post({
+    url,
+    headers: {
+      'User-Agent': 'Form Builder v0.1.0',
+      'Authorization': `token ${token}`
+    },
+    json
+  })
   await git.addRemote({
     dir,
     remote: 'origin',
@@ -381,9 +402,22 @@ const installNVS = async () => {
   notifySticky(`Installed nvs at ${nvsPath}`)
 }
 
-const setUp = async () => {
+const reinstallEditor = async () => {
+  notifySticky(`Reinstalling editor`)
+  rimraf.sync(fbEditorPath)
+  rimraf.sync(nvsPath)
+  await installDependencies()
+  notifySticky(`Reinstalled editor`)
+}
+app.reinstallEditor = reinstallEditor
+
+const installDependencies = async () => {
   await installNVS()
   await cloneEditor()
+}
+
+const setUp = async () => {
+  await installDependencies()
   if (firstInstall) {
     notifySticky('All dependencies installed - launching app')
   }
