@@ -2,7 +2,7 @@
 <html lang="en" class="govuk-template ">
   <head>
     <meta charset="utf-8" />
-    <title>Form Builder - Forms</title>
+    <title>Form Builder - Create new form</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0b0c0c" /> 
 
@@ -68,12 +68,12 @@
             <button type="button" role="button" class="govuk-header__menu-button js-header-toggle" aria-controls="navigation" aria-label="Show or hide Top Level Navigation">Menu</button>
         <nav>
           <ul id="navigation" class="govuk-header__navigation " aria-label="Top Level Navigation">
-            <li class="govuk-header__navigation-item govuk-header__navigation-item--active">
+            <li class="govuk-header__navigation-item">
               <a class="govuk-header__link" href="index.html">
                 Forms
               </a>
             </li>
-            <li class="govuk-header__navigation-item">
+            <li class="govuk-header__navigation-item govuk-header__navigation-item--active">
               <a class="govuk-header__link" href="create.html">
                 Create new form
               </a>
@@ -122,37 +122,31 @@
 
 
 
-<h1 class="govuk-heading-xl">Forms</h1>
+<h1 class="govuk-heading-xl">Create new form</h1>
 
 
 
 <!-- CONTENTS -->
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="formname">
+        Form name
+      </label>
+      <input class="govuk-input" id="formname" name="formname" type="text">
+    </div>
+    <div class="govuk-form-group createrepo-group">
+      <div class="govuk-checkboxes__item">
+        <input class="govuk-checkboxes__input" id="createrepo" name="createrepo" type="checkbox" value="yes">
+        <label class="govuk-label govuk-checkboxes__label" for="createrepo">
+          Create repository
+        </label>
+      </div>
+    </div>
+    <p id="gitInstructions">If you want to create a github repository for the form at the same time, please add your github details in <a href="settings.html">settings</a></p>
 
-<table class="govuk-table">
-  <caption class="govuk-table__caption govuk-visually-hidden">List of forms</caption>
- 
-  <tbody class="govuk-table__body" id="services">
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
-  </tbody>
-</table>
- <p id="servicesInstructions">You don’t have any forms yet. <a href="add.html">Add an existing form</a> or <a href="create.html">create one</a></p>
+    
+    <button type="submit" class="govuk-button" id="createForm">
+      Create
+    </button>
     
 <!-- CONTENTS END -->
 
@@ -173,36 +167,40 @@
     <script>
       const {app} = require('./app.js')
 
+      const $createForm = document.getElementById('createForm')
+      const $createRepo = document.getElementById('createrepo')
+      const $createRepoGroup = document.querySelector('.createrepo-group')
+      const $gitInstructions = document.getElementById('gitInstructions')
+      $createForm.addEventListener('click', () => {
+        const $formname = document.getElementById('formname')
+        const formname = $formname.value
+        if (formname) {
+          const createRepo = $createRepo.checked
+          app.createService(formname, createRepo).then(() => {
+            document.location.href = 'index.html'
+          })
+        }
+      })
+
+      const git = app.store.get('git') || {}
+      const gitSettings = ['name', 'email', 'user', 'token']
+      let gitRequirementsMet = true
+      gitSettings.forEach(setting => {
+        if (!git[setting]) {
+          gitRequirementsMet = false
+        }
+      })
+      console.log({gitRequirementsMet})
       const hideElement = ($el) => {
         $el.style = 'display:none'
       }
+      const style = 'display:none'
+      if (gitRequirementsMet) {
+        hideElement($gitInstructions)
+       } else {
+        hideElement($createRepoGroup)
+       }
 
-      let services = app.services
-      const $services = document.getElementById('services')
-      const $servicesInstructions = document.getElementById('servicesInstructions')
-
-      const listServices = () => {
-        const serviceList = Object.keys(services)
-        if (!serviceList.length) {
-          hideElement($services)
-          return
-        }
-        hideElement($servicesInstructions)
-        let output = ''
-        serviceList.forEach(service => {
-          output += `
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header" scope="row">${service}</th>
-              <td class="govuk-table__cell"><span onclick="app.launchService('${service}')">Start</span> <span onclick="app.stopService('${service}')">Stop</span></td>
-              <td class="govuk-table__cell"><span onclick="app.openService('${service}')">Open</span></td>
-              <td class="govuk-table__cell"><span onclick="app.deleteService('${service}')">Delete</span></td>
-            </tr>
-          `
-          // $services.insertAdjacentHTML('beforeend', `<li class="service">${service} --- <span onclick="app.launchService('${service}')">Start</span> <span onclick="app.stopService('${service}')">Stop</span> <span onclick="">Open</span></li>`)
-        })
-        $services.innerHTML = output
-      }
-      listServices()
     </script>
   </body>
 </html>

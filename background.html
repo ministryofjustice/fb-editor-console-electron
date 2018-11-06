@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Background!</title>
+  </head>
+  <body>
+    <h1>Background!</h1>
+    <!-- All of the Node.js APIs are available in this renderer process. -->
+    We are using Node.js <script>document.write(process.versions.node)</script>,
+    Chromium <script>document.write(process.versions.chrome)</script>,
+    and Electron <script>document.write(process.versions.electron)</script>.
+
+    <ul>
+      <li>fbPath <script>document.write(process.env.fbPath)</script></li>
+      <li>fbEditorPath <script>document.write(process.env.fbEditorPath)</script></li>
+      <li>fbServicesPath <script>document.write(process.env.fbServicesPath)</script></li>
+      <li>nvsPath <script>document.write(process.env.nvsPath)</script></li>
+      <li>__filename <script>document.write(window.__filename)</script></li>
+    </ul>
+    <pre><script>document.write(JSON.stringify(process.env, null, 2))</script></pre>
+
+    <p onclick="doSummat()">doSummat</p>
+
+    <script>
+      // You can also require other files to run in this process
+      const backgroundJS = require('./background.js')
+    </script>
+  </body>
+</html>

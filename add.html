@@ -2,7 +2,7 @@
 <html lang="en" class="govuk-template ">
   <head>
     <meta charset="utf-8" />
-    <title>Form Builder - Forms</title>
+    <title>Form Builder - Add existing form</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0b0c0c" /> 
 
@@ -68,7 +68,7 @@
             <button type="button" role="button" class="govuk-header__menu-button js-header-toggle" aria-controls="navigation" aria-label="Show or hide Top Level Navigation">Menu</button>
         <nav>
           <ul id="navigation" class="govuk-header__navigation " aria-label="Top Level Navigation">
-            <li class="govuk-header__navigation-item govuk-header__navigation-item--active">
+            <li class="govuk-header__navigation-item">
               <a class="govuk-header__link" href="index.html">
                 Forms
               </a>
@@ -78,7 +78,7 @@
                 Create new form
               </a>
             </li>
-            <li class="govuk-header__navigation-item">
+            <li class="govuk-header__navigation-item govuk-header__navigation-item--active">
               <a class="govuk-header__link" href="add.html">
                 Add exisiting form
               </a>
@@ -122,37 +122,21 @@
 
 
 
-<h1 class="govuk-heading-xl">Forms</h1>
+<h1 class="govuk-heading-xl">Add exisiting form</h1>
 
 
 
 <!-- CONTENTS -->
-
-<table class="govuk-table">
-  <caption class="govuk-table__caption govuk-visually-hidden">List of forms</caption>
- 
-  <tbody class="govuk-table__body" id="services">
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
-  </tbody>
-</table>
- <p id="servicesInstructions">You don’t have any forms yet. <a href="add.html">Add an existing form</a> or <a href="create.html">create one</a></p>
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="repoaddress">
+        Repository URL
+      </label>
+      <input class="govuk-input" id="repoaddress" name="repoaddress" type="text">
+    </div>
+    
+    <button type="submit" class="govuk-button" id="addForm">
+      Add
+    </button>
     
 <!-- CONTENTS END -->
 
@@ -173,36 +157,17 @@
     <script>
       const {app} = require('./app.js')
 
-      const hideElement = ($el) => {
-        $el.style = 'display:none'
-      }
-
-      let services = app.services
-      const $services = document.getElementById('services')
-      const $servicesInstructions = document.getElementById('servicesInstructions')
-
-      const listServices = () => {
-        const serviceList = Object.keys(services)
-        if (!serviceList.length) {
-          hideElement($services)
-          return
+      const $addForm = document.getElementById('addForm')
+      $addForm.addEventListener('click', () => {
+        const $repoaddress = document.getElementById('repoaddress')
+        const repoaddress = $repoaddress.value
+        if (repoaddress) {
+          app.addService(repoaddress).then(() => {
+            document.location.href = 'index.html'
+          }).catch(e => console.log(e))
         }
-        hideElement($servicesInstructions)
-        let output = ''
-        serviceList.forEach(service => {
-          output += `
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header" scope="row">${service}</th>
-              <td class="govuk-table__cell"><span onclick="app.launchService('${service}')">Start</span> <span onclick="app.stopService('${service}')">Stop</span></td>
-              <td class="govuk-table__cell"><span onclick="app.openService('${service}')">Open</span></td>
-              <td class="govuk-table__cell"><span onclick="app.deleteService('${service}')">Delete</span></td>
-            </tr>
-          `
-          // $services.insertAdjacentHTML('beforeend', `<li class="service">${service} --- <span onclick="app.launchService('${service}')">Start</span> <span onclick="app.stopService('${service}')">Stop</span> <span onclick="">Open</span></li>`)
-        })
-        $services.innerHTML = output
-      }
-      listServices()
+      })
+
     </script>
   </body>
 </html>

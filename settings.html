@@ -2,7 +2,7 @@
 <html lang="en" class="govuk-template ">
   <head>
     <meta charset="utf-8" />
-    <title>Form Builder - Forms</title>
+    <title>Form Builder - Settings</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0b0c0c" /> 
 
@@ -68,7 +68,7 @@
             <button type="button" role="button" class="govuk-header__menu-button js-header-toggle" aria-controls="navigation" aria-label="Show or hide Top Level Navigation">Menu</button>
         <nav>
           <ul id="navigation" class="govuk-header__navigation " aria-label="Top Level Navigation">
-            <li class="govuk-header__navigation-item govuk-header__navigation-item--active">
+            <li class="govuk-header__navigation-item">
               <a class="govuk-header__link" href="index.html">
                 Forms
               </a>
@@ -83,7 +83,7 @@
                 Add exisiting form
               </a>
             </li>
-            <li class="govuk-header__navigation-item">
+            <li class="govuk-header__navigation-item govuk-header__navigation-item--active">
               <a class="govuk-header__link" href="settings.html">
                 Settings
               </a>
@@ -122,38 +122,71 @@
 
 
 
-<h1 class="govuk-heading-xl">Forms</h1>
+<h1 class="govuk-heading-xl">Settings</h1>
+
+<!--
+<p class="govuk-body-l" data-block-id="page.start" data-block-property="lede">This is your start page first paragraph. You can only have one paragraph here.</p>
+-->
 
 
 
 <!-- CONTENTS -->
 
-<table class="govuk-table">
-  <caption class="govuk-table__caption govuk-visually-hidden">List of forms</caption>
- 
-  <tbody class="govuk-table__body" id="services">
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
-  </tbody>
-</table>
- <p id="servicesInstructions">You don’t have any forms yet. <a href="add.html">Add an existing form</a> or <a href="create.html">create one</a></p>
-    
+ <div class="govuk-tabs" data-module="tabs">
+  <h2 class="govuk-tabs__title">
+    Contents
+  </h2>
+
+  <ul class="govuk-tabs__list">
+    <li class="govuk-tabs__list-item">
+      <a class="govuk-tabs__tab govuk-tabs__tab--selected" href="#git">
+        Git settings
+      </a>
+    </li>
+    <li class="govuk-tabs__list-item">
+      <a class="govuk-tabs__tab" href="#updates">
+        Updates
+      </a>
+    </li>
+  </ul>
+
+  <section class="govuk-tabs__panel" id="git">
+    <h2 class="govuk-heading-l govuk-visually-hidden">Git settings</h2>
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="name">
+        Name
+      </label>
+      <input class="govuk-input" id="name" name="name" type="text">
+    </div>
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="email">
+        Email address
+      </label>
+      <input class="govuk-input" id="email" name="email" type="text">
+    </div>
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="user">
+        Username
+      </label>
+      <input class="govuk-input" id="user" name="user" type="text">
+    </div>
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="token">
+        Github token
+      </label>
+      <input class="govuk-input" id="token" name="token" type="text">
+    </div>
+    <button type="submit" class="govuk-button" id="saveGit">
+      Save
+    </button>
+  </section>
+  <section class="govuk-tabs__panel govuk-tabs__panel--hidden" id="updates">
+    <h2 class="govuk-heading-l">Updates</h2>
+
+
+
+  </section>
+</div>
 <!-- CONTENTS END -->
 
 
@@ -173,36 +206,22 @@
     <script>
       const {app} = require('./app.js')
 
-      const hideElement = ($el) => {
-        $el.style = 'display:none'
-      }
-
-      let services = app.services
-      const $services = document.getElementById('services')
-      const $servicesInstructions = document.getElementById('servicesInstructions')
-
-      const listServices = () => {
-        const serviceList = Object.keys(services)
-        if (!serviceList.length) {
-          hideElement($services)
-          return
-        }
-        hideElement($servicesInstructions)
-        let output = ''
-        serviceList.forEach(service => {
-          output += `
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header" scope="row">${service}</th>
-              <td class="govuk-table__cell"><span onclick="app.launchService('${service}')">Start</span> <span onclick="app.stopService('${service}')">Stop</span></td>
-              <td class="govuk-table__cell"><span onclick="app.openService('${service}')">Open</span></td>
-              <td class="govuk-table__cell"><span onclick="app.deleteService('${service}')">Delete</span></td>
-            </tr>
-          `
-          // $services.insertAdjacentHTML('beforeend', `<li class="service">${service} --- <span onclick="app.launchService('${service}')">Start</span> <span onclick="app.stopService('${service}')">Stop</span> <span onclick="">Open</span></li>`)
+      const git = app.store.get('git') || {}
+      const gitSettings = ['name', 'email', 'user', 'token']
+      gitSettings.forEach(setting => {
+        const $setting = document.getElementById(setting)
+        $setting.value = git[setting] || ''
+      })
+      const $saveGit = document.getElementById('saveGit')
+      $saveGit.addEventListener('click', () => {
+        const git = {}
+        gitSettings.forEach(setting => {
+          const $setting = document.getElementById(setting)
+          git[setting] = $setting.value || ''
         })
-        $services.innerHTML = output
-      }
-      listServices()
+        app.store.set('git', git)
+      })
+      
     </script>
   </body>
 </html>
