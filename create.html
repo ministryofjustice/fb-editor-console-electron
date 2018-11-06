@@ -141,7 +141,7 @@
         </label>
       </div>
     </div>
-    <p id="gitInstructions">If you want to create a github repository for the form at the same time, please add your github details in <a href="settings.html">settings</a></p>
+    <p id="gitInstructions"><!-- If you want to create a github repository for the form at the same time, please add your github details in <a href="settings.html">settings</a> --></p>
 
     
     <button type="submit" class="govuk-button" id="createForm">
@@ -200,6 +200,11 @@
        } else {
         hideElement($createRepoGroup)
        }
+
+      // because request is bust in build currently
+      hideElement($createRepoGroup)
+      hideElement($gitInstructions)
+
 
     </script>
   </body>

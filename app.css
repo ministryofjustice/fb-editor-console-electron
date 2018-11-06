@@ -12,3 +12,7 @@ html.govuk-template {
     float: right;
   }
 }
+
+.govuk-table__row {
+  cursor: pointer;
+}

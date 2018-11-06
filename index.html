@@ -115,7 +115,7 @@
 <div class="govuk-grid-row">
 
 
-<div class="govuk-grid-column-two-thirds">
+<div class="govuk-grid-column-full-width">
 
 
 
@@ -124,7 +124,7 @@
 
 <h1 class="govuk-heading-xl">Forms</h1>
 
-
+<p id="formsInstructions">Please <a class="govuk-link" href="settings.html">add your github details</a></p>
 
 <!-- CONTENTS -->
 
@@ -132,27 +132,16 @@
   <caption class="govuk-table__caption govuk-visually-hidden">List of forms</caption>
  
   <tbody class="govuk-table__body" id="services">
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
-    <tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row">Form name</th>
-      <td class="govuk-table__cell">Start/Stop</td>
-      <td class="govuk-table__cell">Open</td>
-      <td class="govuk-table__cell">Delete</td>
-    </tr>
+            <tr class="govuk-table__row">
+              <th class="govuk-table__header" scope="row">${service}</th>
+              <td class="govuk-table__cell"><span onclick="app.${startStopMeth}('${service}').then(reloadPage)">${startStop}</span></td>
+              <td class="govuk-table__cell"><span onclick="app.${startStopMethod}('${service}').then(reloadPage)">${startStop}</span></td>
+              <td class="govuk-table__cell">${running ? `<span onclick="app.openService('${service}')">Open</span>` : '&nbsp;'}</td>
+              <td class="govuk-table__cell"><a href="#" class="govuk-link" onclick="app.deleteService('${service}').then(() => { document.location.reload() })">Delete</a></td>
+            </tr>
   </tbody>
 </table>
- <p id="servicesInstructions">You don’t have any forms yet. <a href="add.html">Add an existing form</a> or <a href="create.html">create one</a></p>
+ <p id="servicesInstructions">You don’t have any forms yet. <a class="govuk-link" href="add.html">Add an existing form</a> or <a class="govuk-link" href="create.html">create one</a></p>
     
 <!-- CONTENTS END -->
 
@@ -181,6 +170,73 @@
       const $services = document.getElementById('services')
       const $servicesInstructions = document.getElementById('servicesInstructions')
 
+      const git = app.store.get('git') || {}
+      if (git.name) {
+        const $formsInstructions = document.getElementById('formsInstructions')
+        hideElement($formsInstructions)
+      } else {
+        hideElement($servicesInstructions)
+      }
+
+
+      const startForm = async (service) => {
+        try {
+          await app.launchService(service)
+          reloadPage()
+        } catch (e) {
+          //
+        }
+      }
+
+      const stopForm = async (service) => {
+        try {
+          await app.stopService(service)
+          reloadPage()
+        } catch (e) {
+          //
+        }
+      }
+
+      const restartForm = async (service) => {
+        return
+        try {
+          await app.restartService(service)
+          reloadPage()
+        } catch (e) {
+          //
+        }
+      }
+
+      const openForm = async (service) => {
+        try {
+          await app.openService(service)
+        } catch (e) {
+          //
+        }
+      }
+
+      const deleteForm = async (service) => {
+        try {
+          await app.deleteService(service)
+          reloadPage()
+        } catch (e) {
+          //
+        }
+      }
+
+      const archiveForm = async (service) => {
+        return
+        try {
+          await app.archiveService(service)
+          reloadPage()
+        } catch (e) {
+          //
+        }
+      }
+
+      const reloadPage = () => {
+        document.location.reload()
+      }
       const listServices = () => {
         const serviceList = Object.keys(services)
         if (!serviceList.length) {
@@ -190,12 +246,21 @@
         hideElement($servicesInstructions)
         let output = ''
         serviceList.forEach(service => {
+          const running = !!services[service].window
+          const status = running ? 'Running' : 'Not running'
           output += `
             <tr class="govuk-table__row">
               <th class="govuk-table__header" scope="row">${service}</th>
-              <td class="govuk-table__cell"><span onclick="app.launchService('${service}')">Start</span> <span onclick="app.stopService('${service}')">Stop</span></td>
-              <td class="govuk-table__cell"><span onclick="app.openService('${service}')">Open</span></td>
-              <td class="govuk-table__cell"><span onclick="app.deleteService('${service}')">Delete</span></td>
+              <td class="govuk-table__cell">
+              <span class="formStatus${running ? ' formStatus--running' : ''}">${status}</span>
+              </td>
+              <td class="govuk-table__cell cell-nowrap">
+              <a href="#" class="govuk-link${running ? ' hidden' : ''}" onclick="startForm('${service}')">Start</a>
+              <a href="#" class="govuk-link${!running ? ' hidden' : ''}" onclick="stopForm('${service}')">Stop</a>
+              <!-- <a href="#" class="govuk-link${!running ? ' hidden' : ''}" onclick="restartForm('${service}')">Restart</a> -->
+              </td>
+              <td class="govuk-table__cell"><a href="#" class="govuk-link${!running ? ' invisible' : ''}" onclick="openForm('${service}')">Open in browser</a></td>
+              <td class="govuk-table__cell"><a href="#" class="govuk-link" onclick="deleteForm('${service}')">Delete</a></td>
             </tr>
           `
           // $services.insertAdjacentHTML('beforeend', `<li class="service">${service} --- <span onclick="app.launchService('${service}')">Start</span> <span onclick="app.stopService('${service}')">Stop</span> <span onclick="">Open</span></li>`)
@@ -204,5 +269,28 @@
       }
       listServices()
     </script>
+    <style>
+    .cell-nowrap a {
+      display: block;
+    }
+    .cell-nowrap .hidden {
+      display: none;
+    }
+    .invisible {
+      visibility: hidden;
+    }
+    .formStatus {
+      display: inline-block;
+      padding: 0.25em 0.5em;
+      color: #fff;
+      background-color: #000;
+      font-size: 12px;
+      text-transform: uppercase;
+      cursor: default;
+    }
+    .formStatus--running {
+      background-color: #006435;
+    }
+    </style>
   </body>
 </html>

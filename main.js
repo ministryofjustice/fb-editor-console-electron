@@ -5,13 +5,14 @@
 const { exec, execSync, spawnSync } = require('child_process')
 const path = require('path')
 const pathExists = require('path-exists')
+const rimraf = require('rimraf')
 const ospath = require('ospath')
 const npm = require("npm")
 const hostile = require('hostile')
 const notifier = require('node-notifier')
 const glob = require('glob')
 const opn = require('opn')
-const request = require('request-promise-native')
+// const request = require('request-promise-native')
 const fs = require('fs')
 const git = require('isomorphic-git')
 git.plugins.set('fs', fs)
@@ -47,14 +48,12 @@ const notifySticky = (message) => {
   })
 }
 
-
+let firstInstall = false
 
 const services = {}
 
 // Modules to control application life and create native browser window
 const {app, BrowserWindow} = require('electron')
-
-console.log('app.getPath', app.getPath('userData'))
 
 app.store = store
 
@@ -66,7 +65,7 @@ const launchApp = () => {
   let mainWindow
 
   function createWindow () {
-    notifySticky('Creating window')
+    // notifySticky('Creating window')
     // Create the browser window.
     mainWindow = new BrowserWindow({show: false})
     mainWindow.maximize()
@@ -98,7 +97,7 @@ const launchApp = () => {
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
-  notifySticky('Registering ready method')
+  // notifySticky('Registering ready method')
   app.on('ready', createWindow)
 
   // Quit when all windows are closed.
@@ -120,7 +119,7 @@ const launchApp = () => {
 
 
   let portCounter = 52000 // 49152
-  app.launchService = (service) => {
+  app.launchService = async (service) => {
     console.log({service})
     const serviceDetails = services[service]
     if (!serviceDetails.port) {
@@ -131,31 +130,31 @@ const launchApp = () => {
     app.clearPort(serviceDetails.port)
     process.env.XPORT = serviceDetails.port
     process.env.SERVICEDATA = serviceDetails.path
-    let backgroundWindow = new BrowserWindow({width: 800, height: 600})
-    // process.env.SERVICEDATA = '/Users/alexrobinson/Projects/formbuilder/fb-ioj' // process.env.fbServiceStarterPath
+    let backgroundWindow = new BrowserWindow({show: false}) // {width: 800, height: 600})
     backgroundWindow.loadFile('background.html')
-    backgroundWindow.webContents.openDevTools()
+    // backgroundWindow.webContents.openDevTools()
     backgroundWindow.on('closed', function () {
       backgroundWindow = null
     })
     serviceDetails.window = backgroundWindow
+
     // setTimeout(() => {
-    //   backgroundWindow.close()
-    // }, 15000)
-    setTimeout(() => {
-      const XPORT = process.env.XPORT
-      console.log('opening XPORT', XPORT)
-      let backgroundWindow2 = new BrowserWindow({xwidth: 800, xheight: 600})
-      backgroundWindow2.loadURL(`http://localhost:${XPORT}`)
-      backgroundWindow2.on('closed', function () {
-        backgroundWindow2 = null
-      })
-    }, 6000)
+    //   const XPORT = process.env.XPORT
+    //   console.log('opening XPORT', XPORT)
+    //   let backgroundWindow2 = new BrowserWindow({xwidth: 800, xheight: 600})
+    //   backgroundWindow2.loadURL(`http://localhost:${XPORT}`)
+    //   backgroundWindow2.on('closed', function () {
+    //     backgroundWindow2 = null
+    //   })
+    // }, 6000)
   }
 
-  app.stopService = (service) => {
+  app.stopService = async (service) => {
     const serviceDetails = services[service]
-    serviceDetails.window.close()
+    if (serviceDetails.window) {
+      serviceDetails.window.close()
+      delete serviceDetails.window
+    }
   }
 
   app.clearPort = (PORT) => {
@@ -166,7 +165,22 @@ const launchApp = () => {
     } catch (e) {
       // ignore errors
     }
+  }
 
+  app.openService = async (service) => {
+    const serviceDetails = services[service]
+    opn(`http://localhost:${serviceDetails.port}`)
+  }
+
+  app.deleteService = async (serviceName) => {
+    await app.stopService(serviceName)
+    const deleteServicePath = path.join(fbServicesPath, serviceName)
+    rimraf.sync(deleteServicePath)
+    delete services[serviceName]
+  }
+
+  app.openExternal = async (url) => {
+    opn(url)
   }
 
   // In this file you can include the rest of your app's specific main process
@@ -202,6 +216,9 @@ existingServices.forEach(service => {
 })
 app.services = services
 
+const installEditorDependencies = () => {
+  execSync(`. ${nvsPath}/nvs.sh && nvs add 10.11 && nvs use 10.11 && cd ${fbEditorPath} && npm install`)
+}
 const cloneEditor = async () => {
   if (pathExists.sync(fbEditorPath)) {
     return
@@ -214,11 +231,27 @@ const cloneEditor = async () => {
     depth: 1
   })
   notifySticky('Installing editor dependencies')
-  execSync(`. ${nvsPath}/nvs.sh && nvs add latest && nvs use latest && cd ${fbEditorPath} && npm install`)
-  notifySticky('Cloned editor')
+  // execSync(`. ${nvsPath}/nvs.sh && nvs add latest && nvs use latest && cd ${fbEditorPath} && npm install`)
+  // execSync(`. ${nvsPath}/nvs.sh && nvs add 10.11 && nvs use 10.11 && cd ${fbEditorPath} && npm install`)
+  installEditorDependencies()
+  notifySticky('Installed editor')
+  notifySticky('Please quit Form Builder and relaunch it')
 }
 
+const updateEditor = async () => {
+  notifySticky('Updating editor')
+  await git.pull({
+    dir: fbEditorPath,
+    ref: 'master',
+    singleBranch: true
+  })
+  installEditorDependencies()
+  notifySticky('Updated editor')
+}
+app.updateEditor = updateEditor
+
 const cloneService = async () => {
+  firstInstall = true
   if (pathExists.sync(fbServiceStarterPath)) {
     return
   }
@@ -239,7 +272,7 @@ const addService = async (serviceName) => {
     return
   }
   const dir = addServicePath
-  notifySticky(`Adding ${serviceStub}`)
+  // notifySticky(`Adding ${serviceStub}`)
   let url = serviceName
   if (!serviceName.includes('/')) {
     url = `https://github.com/ministryofjustice/${serviceName}`
@@ -261,7 +294,7 @@ const createService = async (serviceName, createRepo) => {
     return
   }
   const dir = newServicePath
-  notifySticky('Cloning service starter')
+  // notifySticky('Cloning service starter')
   await git.clone({
     dir,
     url: 'https://github.com/ministryofjustice/fb-service-starter',
@@ -299,6 +332,7 @@ const createService = async (serviceName, createRepo) => {
     },
     message: 'Created form'
   })
+  notifySticky(`Created ${serviceName}`)
   if (!createRepo) {
     return
   }
@@ -308,14 +342,14 @@ const createService = async (serviceName, createRepo) => {
     auto_init: false,
     private: false
   }
-  await request.post({
-    url,
-    headers: {
-      'User-Agent': 'Form Builder v0.1.0',
-      'Authorization': `token ${token}`
-    },
-    json
-  })
+  // await request.post({
+  //   url,
+  //   headers: {
+  //     'User-Agent': 'Form Builder v0.1.0',
+  //     'Authorization': `token ${token}`
+  //   },
+  //   json
+  // })
   await git.addRemote({
     dir,
     remote: 'origin',
@@ -350,34 +384,17 @@ const installNVS = async () => {
 const setUp = async () => {
   await installNVS()
   await cloneEditor()
-  await cloneService()
+  if (firstInstall) {
+    notifySticky('All dependencies installed - launching app')
+  }
+  // await cloneService()
 
 
-  const PORT = 4321
-  notifySticky(`Starting editor - PORT=${PORT} SERVICEDATA=${fbServiceStarterPath} npm start`)
+  // const PORT = 4321
+  // notifySticky(`Starting editor - PORT=${PORT} SERVICEDATA=${fbServiceStarterPath} npm start`)
 
-  // return new Promise((resolve, reject) => {
-    exec(`. ${nvsPath}/nvs.sh && nvs use latest && cd ${fbEditorPath} && PORT=${PORT} SERVICEDATA=${fbServiceStarterPath} npm start`, (err, stdout, stderr) => {})
-  //   setTimeout(() => {
-  //     opn(`http://localhost:${PORT}`)
-  //     resolve()
-  //   }, 2000)
-  // })
- 
-  // spawnSync(`. ${nvsPath}/nvs.sh && nvs use latest && cd ${fbEditorPath} && PORT=${PORT} SERVICEDATA=${fbServiceStarterPath} npm start`)
-
-
-  // exec(`. ${nvsPath}/nvs.sh && nvs add latest && nvs use latest && node -v && node -e 'console.log("nvs node running")' && cd ${fbEditorPath} && npm install`, (err, stdout, stderr) => {
-  //   console.log(stdout)
-  //   console.log(stderr)
-  //   console.log('Actually got past nvs.sh')
-  //   const PORT = 4321
-  //   notifySticky(`Starting editor - PORT=${PORT} SERVICEDATA=${fbServiceStarterPath} npm start`)
   //   exec(`. ${nvsPath}/nvs.sh && nvs use latest && cd ${fbEditorPath} && PORT=${PORT} SERVICEDATA=${fbServiceStarterPath} npm start`, (err, stdout, stderr) => {})
-  //   // notifier.notify('FB Editor started')
-  //   opn(`http://localhost:${PORT}`);
-  // })
-  // notifySticky('Ran nvs.sh')
+
 
 }
 
@@ -385,9 +402,8 @@ const runApp = async () => {
   try {
     await setUp()
   } catch (e) {
-    console.log(e)
+    console.log('Setup went wrong', e)
   }
-  notifySticky('Launching app')
   launchApp()
 }
 
