@@ -27,6 +27,7 @@ const makeBackgroundWindow = require('./make-background-window')
 
 // 49152–65535 (215 + 214 to 216 − 1) 
 
+let firstInstall = false
 
 // const NotificationCenter = require('node-notifier').NotificationCenter
 
@@ -48,23 +49,208 @@ const notifySticky = (message) => {
   })
 }
 
-let firstInstall = false
+const getDirectories = source =>
+  readdirSync(source).map(name => path.join(source, name)).filter(isDirectory).map(dir => path.basename(dir))
 
 const services = {}
 
-// Modules to control application life and create native browser window
-const {app, BrowserWindow, Menu} = require('electron')
 
-app.store = store
+const installEditorDependencies = () => {
+  execSync(`. ${nvsPath}/nvs.sh && nvs add 10.11 && nvs use 10.11 && cd ${fbEditorPath} && npm install`)
+}
+const cloneEditor = async () => {
+  if (pathExists.sync(fbEditorPath)) {
+    return
+  }
+  notifySticky('Installing editor')
+  await git.clone({
+    dir: fbEditorPath,
+    url: 'https://github.com/ministryofjustice/fb-editor-node',
+    singleBranch: true,
+    depth: 1
+  })
+  notifySticky('Installing editor dependencies')
+  // execSync(`. ${nvsPath}/nvs.sh && nvs add latest && nvs use latest && cd ${fbEditorPath} && npm install`)
+  // execSync(`. ${nvsPath}/nvs.sh && nvs add 10.11 && nvs use 10.11 && cd ${fbEditorPath} && npm install`)
+  installEditorDependencies()
+  notifySticky('Installed editor')
+  // notifySticky('Please restart Form Builder')
+}
+
+const updateEditor = async () => {
+  notifySticky('Updating editor')
+  await git.pull({
+    dir: fbEditorPath,
+    ref: 'master',
+    singleBranch: true
+  })
+  installEditorDependencies()
+  notifySticky('Updated editor')
+}
+
+const cloneService = async () => {
+  firstInstall = true
+  if (pathExists.sync(fbServiceStarterPath)) {
+    return
+  }
+  notifySticky('Installing service starter')
+  await git.clone({
+    dir: fbServiceStarterPath,
+    url: 'https://github.com/ministryofjustice/fb-service-starter',
+    singleBranch: true,
+    depth: 1
+  })
+  notifySticky('Cloned service')
+}
+
+const addService = async (serviceName) => {
+  const serviceStub = serviceName.replace(/.*\//, '').replace(/\.git$/, '')
+  const addServicePath = path.join(fbServicesPath, serviceStub)
+  if (pathExists.sync(addServicePath)) {
+    return
+  }
+  const dir = addServicePath
+  // notifySticky(`Adding ${serviceStub}`)
+  let url = serviceName
+  if (!serviceName.includes('/')) {
+    url = `https://github.com/ministryofjustice/${serviceName}`
+  }
+  await git.clone({
+    dir,
+    url,
+    singleBranch: true,
+    depth: 1
+  })
+  services[serviceStub] = {}
+  notifySticky(`Added ${serviceStub}`)
+}
+
+const createService = async (serviceName, createRepo) => {
+  const newServicePath = path.join(fbServicesPath, serviceName)
+  if (pathExists.sync(newServicePath)) {
+    return
+  }
+  const dir = newServicePath
+  // notifySticky('Cloning service starter')
+  await git.clone({
+    dir,
+    url: 'https://github.com/ministryofjustice/fb-service-starter',
+    singleBranch: true,
+    depth: 1
+  })
+  const gitDir = path.join(newServicePath, '.git')
+  execSync(`rm -rf ${gitDir}`)
+  await git.init({dir})
+  services[serviceName] = {}
+  const files = glob.sync(`${dir}/**/*`, {dot:true})
+    .filter(file => !isDirectory(file))
+    .filter(file => !file.includes('.git/'))
+
+  const addFile = async (filepath) => {
+    filepath = filepath.replace(dir + '/', '')
+    try {
+      await git.add({
+        dir,
+        filepath
+      })
+    } catch (e) {
+      // ignore attempts to add ignored files
+    }
+  }
+  await Promise.all(files.map(addFile))
+
+  const gitSettings = store.get('git')
+  const {name, email, user, token} = gitSettings
+  await git.commit({
+    dir,
+    author: {
+      name,
+      email
+    },
+    message: 'Created form'
+  })
+  notifySticky(`Created ${serviceName}`)
+  if (!createRepo) {
+    return
+  }
+  let url = 'https://api.github.com/user/repos'
+  const json = {
+    name: serviceName,
+    auto_init: false,
+    private: false
+  }
+  await request.post({
+    url,
+    headers: {
+      'User-Agent': 'Form Builder v0.1.0',
+      'Authorization': `token ${token}`
+    },
+    json
+  })
+  await git.addRemote({
+    dir,
+    remote: 'origin',
+    url: `https://github.com/${user}/${serviceName}.git`
+  })
+  await git.push({
+    dir,
+    remote: 'origin',
+    ref: 'master',
+    token,
+  })
+}
+
+const installNVS = async () => {
+  if (pathExists.sync(nvsPath)) {
+    return
+  }
+  notifySticky('Installing nvs (Node version manager)')
+  await git.clone({
+    dir: nvsPath,
+    url: 'https://github.com/jasongin/nvs',
+    singleBranch: true,
+    depth: 1
+  })
+  notifySticky(`Installed nvs at ${nvsPath}`)
+}
+
+const reinstallEditor = async () => {
+  notifySticky(`Reinstalling editor`)
+  rimraf.sync(fbEditorPath)
+  rimraf.sync(nvsPath)
+  await installDependencies()
+  notifySticky(`Reinstalled editor`)
+}
+
+const installDependencies = async () => {
+  await installNVS()
+  await cloneEditor()
+}
+
+
+// Modules to control application life and create native browser window
+
 
 const launchApp = () => {
+  // notifySticky('Launching app')
 
+  const {app, BrowserWindow, Menu} = require('electron')
+
+  app.store = store
+  app.services = services
+  app.updateEditor = updateEditor
+  app.addService = addService
+  app.createService = createService
+  app.reinstallEditor = reinstallEditor
 
   // Keep a global reference of the window object, if you don't, the window will
   // be closed automatically when the JavaScript object is garbage collected.
   let mainWindow
 
   function createWindow () {
+    if (mainWindow) {
+      return
+    }
     // notifySticky('Creating window')
     // Create the browser window.
     mainWindow = new BrowserWindow({show: false})
@@ -119,7 +305,16 @@ const launchApp = () => {
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
   // notifySticky('Registering ready method')
-  app.on('ready', createWindow)
+  
+
+  // if (firstInstall) {
+    setTimeout(() => {
+      console.log('setTimeout createWindow')
+      createWindow()
+    }, 5000)
+  // } else {
+    app.on('ready', createWindow)
+  // }
 
   // Quit when all windows are closed.
   app.on('window-all-closed', function () {
@@ -139,7 +334,7 @@ const launchApp = () => {
   })
 
 
-  let portCounter = 4500 // 52000 // 49152
+  let portCounter = 52000 // 49152
   app.launchService = async (service) => {
     const serviceDetails = services[service]
     if (!serviceDetails.port) {
@@ -158,16 +353,6 @@ const launchApp = () => {
       backgroundWindow = null
     })
     serviceDetails.window = backgroundWindow
-
-    // setTimeout(() => {
-    //   const XPORT = process.env.XPORT
-    //   console.log('opening XPORT', XPORT)
-    //   let backgroundWindow2 = new BrowserWindow({xwidth: 800, xheight: 600})
-    //   backgroundWindow2.loadURL(`http://localhost:${XPORT}`)
-    //   backgroundWindow2.on('closed', function () {
-    //     backgroundWindow2 = null
-    //   })
-    // }, 6000)
   }
 
   app.stopService = async (service) => {
@@ -209,13 +394,16 @@ const launchApp = () => {
 }
 
 let homeDir = ospath.home()
-homeDir = path.join(homeDir, 'tmp')
-homeDir = app.getPath('documents')
+homeDir = path.join(homeDir, 'documents')
+// homeDir = app.getPath('documents')
 
 const fbPath = path.join(homeDir, 'formbuilder')
 process.env.fbPath = fbPath
 // shell.mkdir('-p', fbPath)
 execSync(`mkdir -p ${fbPath}`)
+
+const nvsPath = path.join(fbPath, '.nvs')
+process.env.nvsPath = nvsPath
 
 const fbEditorPath = path.join(fbPath, '.editor')
 process.env.fbEditorPath = fbEditorPath
@@ -227,194 +415,11 @@ execSync(`mkdir -p ${fbServicesPath}`)
 const fbServiceStarterPath = path.join(fbServicesPath, 'fb-service-starter')
 process.env.fbServiceStarterPath = fbServiceStarterPath
 
-const getDirectories = source =>
-  readdirSync(source).map(name => path.join(source, name)).filter(isDirectory).map(dir => path.basename(dir))
-
 let existingServices = getDirectories(fbServicesPath)
 
 existingServices.forEach(service => {
   services[service] = {}
 })
-app.services = services
-
-const installEditorDependencies = () => {
-  execSync(`. ${nvsPath}/nvs.sh && nvs add 10.11 && nvs use 10.11 && cd ${fbEditorPath} && npm install`)
-}
-const cloneEditor = async () => {
-  if (pathExists.sync(fbEditorPath)) {
-    return
-  }
-  notifySticky('Installing editor')
-  await git.clone({
-    dir: fbEditorPath,
-    url: 'https://github.com/ministryofjustice/fb-editor-node',
-    singleBranch: true,
-    depth: 1
-  })
-  notifySticky('Installing editor dependencies')
-  // execSync(`. ${nvsPath}/nvs.sh && nvs add latest && nvs use latest && cd ${fbEditorPath} && npm install`)
-  // execSync(`. ${nvsPath}/nvs.sh && nvs add 10.11 && nvs use 10.11 && cd ${fbEditorPath} && npm install`)
-  installEditorDependencies()
-  notifySticky('Installed editor')
-  notifySticky('Please quit Form Builder and relaunch it')
-}
-
-const updateEditor = async () => {
-  notifySticky('Updating editor')
-  await git.pull({
-    dir: fbEditorPath,
-    ref: 'master',
-    singleBranch: true
-  })
-  installEditorDependencies()
-  notifySticky('Updated editor')
-}
-app.updateEditor = updateEditor
-
-const cloneService = async () => {
-  firstInstall = true
-  if (pathExists.sync(fbServiceStarterPath)) {
-    return
-  }
-  notifySticky('Installing service starter')
-  await git.clone({
-    dir: fbServiceStarterPath,
-    url: 'https://github.com/ministryofjustice/fb-service-starter',
-    singleBranch: true,
-    depth: 1
-  })
-  notifySticky('Cloned service')
-}
-
-const addService = async (serviceName) => {
-  const serviceStub = serviceName.replace(/.*\//, '').replace(/\.git$/, '')
-  const addServicePath = path.join(fbServicesPath, serviceStub)
-  if (pathExists.sync(addServicePath)) {
-    return
-  }
-  const dir = addServicePath
-  // notifySticky(`Adding ${serviceStub}`)
-  let url = serviceName
-  if (!serviceName.includes('/')) {
-    url = `https://github.com/ministryofjustice/${serviceName}`
-  }
-  await git.clone({
-    dir,
-    url,
-    singleBranch: true,
-    depth: 1
-  })
-  services[serviceStub] = {}
-  notifySticky(`Added ${serviceStub}`)
-}
-app.addService = addService
-
-const createService = async (serviceName, createRepo) => {
-  const newServicePath = path.join(fbServicesPath, serviceName)
-  if (pathExists.sync(newServicePath)) {
-    return
-  }
-  const dir = newServicePath
-  // notifySticky('Cloning service starter')
-  await git.clone({
-    dir,
-    url: 'https://github.com/ministryofjustice/fb-service-starter',
-    singleBranch: true,
-    depth: 1
-  })
-  const gitDir = path.join(newServicePath, '.git')
-  execSync(`rm -rf ${gitDir}`)
-  await git.init({dir})
-  services[serviceName] = {}
-  const files = glob.sync(`${dir}/**/*`, {dot:true})
-    .filter(file => !isDirectory(file))
-    .filter(file => !file.includes('.git/'))
-
-  const addFile = async (filepath) => {
-    filepath = filepath.replace(dir + '/', '')
-    try {
-      await git.add({
-        dir,
-        filepath
-      })
-    } catch (e) {
-      // ignore attempts to add ignored files
-    }
-  }
-  await Promise.all(files.map(addFile))
-
-  const gitSettings = app.store.get('git')
-  const {name, email, user, token} = gitSettings
-  await git.commit({
-    dir,
-    author: {
-      name,
-      email
-    },
-    message: 'Created form'
-  })
-  notifySticky(`Created ${serviceName}`)
-  if (!createRepo) {
-    return
-  }
-  let url = 'https://api.github.com/user/repos'
-  const json = {
-    name: serviceName,
-    auto_init: false,
-    private: false
-  }
-  await request.post({
-    url,
-    headers: {
-      'User-Agent': 'Form Builder v0.1.0',
-      'Authorization': `token ${token}`
-    },
-    json
-  })
-  await git.addRemote({
-    dir,
-    remote: 'origin',
-    url: `https://github.com/${user}/${serviceName}.git`
-  })
-  await git.push({
-    dir,
-    remote: 'origin',
-    ref: 'master',
-    token,
-  })
-}
-app.createService = createService
-
-const nvsPath = path.join(fbPath, '.nvs')
-process.env.nvsPath = nvsPath
-
-const installNVS = async () => {
-  if (pathExists.sync(nvsPath)) {
-    return
-  }
-  notifySticky('Installing nvs (Node version manager)')
-  await git.clone({
-    dir: nvsPath,
-    url: 'https://github.com/jasongin/nvs',
-    singleBranch: true,
-    depth: 1
-  })
-  notifySticky(`Installed nvs at ${nvsPath}`)
-}
-
-const reinstallEditor = async () => {
-  notifySticky(`Reinstalling editor`)
-  rimraf.sync(fbEditorPath)
-  rimraf.sync(nvsPath)
-  await installDependencies()
-  notifySticky(`Reinstalled editor`)
-}
-app.reinstallEditor = reinstallEditor
-
-const installDependencies = async () => {
-  await installNVS()
-  await cloneEditor()
-}
 
 const setUp = async () => {
   await installDependencies()
