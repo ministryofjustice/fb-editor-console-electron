@@ -252,6 +252,20 @@ const fbServicesPath = path.join(fbPath, 'forms')
 app.paths.services = fbServicesPath
 execSync(`mkdir -p ${fbServicesPath}`)
 
+
+  const consoleLogPath = path.join(app.paths.logs, `fb.console.log`)
+  try {
+    fs.unlinkSync(consoleLogPath)
+  } catch (e) {
+    //
+  }
+  const consoleLog = fs.createWriteStream(consoleLogPath, {flags: 'a'})
+
+  // redirect stdout / stderr
+  process.__defineGetter__('stdout', () => { return consoleLog })
+  process.__defineGetter__('stderr', () => { return consoleLog })
+
+
 let existingServices = getDirectories(app.paths.services)
 
 existingServices.forEach(service => {

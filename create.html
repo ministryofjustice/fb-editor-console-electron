@@ -180,6 +180,7 @@
         app.notify(`Creating ${serviceName}`, {phase: 'Create form'})
         const newServicePath = path.join(app.paths.services, serviceName)
         if (pathExists.sync(newServicePath)) {
+          app.notify(`${serviceName} already exists`, {dismiss: true})
           return
         }
         const dir = newServicePath
