@@ -242,7 +242,10 @@
         document.location.reload()
       }
       const listServices = () => {
+        // let services = app.services
         const serviceList = Object.keys(services)
+        // alert(serviceList)
+        // alert(Object.keys(app.getServices()))
         if (!serviceList.length) {
           hideElement($services)
           return

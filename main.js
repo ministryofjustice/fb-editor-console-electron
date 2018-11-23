@@ -13,11 +13,7 @@ const fs = require('fs')
 const git = require('isomorphic-git')
 git.plugins.set('fs', fs)
 
-const ipc = require('electron-better-ipc');
-
-ipc.answerRenderer('wuh', async params => {
-  console.log('wuh', JSON.stringify(params, null, 2))
-})
+const ipc = require('electron-better-ipc')
 
 const Store = require('electron-store')
 const store = new Store()
@@ -32,6 +28,13 @@ let firstInstall = false
 
 const {app, BrowserWindow, Menu} = require('electron')
 
+app.git = git
+app.utils = {
+  pathExists,
+  isDirectory,
+  glob,
+  request
+}
 app.windows = {}
 
 // let notificationWindow
@@ -74,6 +77,7 @@ app.dismissNotification = () => {
 }
 
 
+
 // 49152–65535 (215 + 214 to 216 − 1) 
 
 const getDirectories = source =>
@@ -81,6 +85,10 @@ const getDirectories = source =>
 
 const services = {}
 
+ipc.answerRenderer('setService', async params => {
+  services[params[name]] = params
+  console.log('setService', JSON.stringify(params, null, 2))
+})
 
 const installEditorDependencies = () => {
   app.notify('Installing editor dependencies')
@@ -117,108 +125,6 @@ const updateEditor = async () => {
   app.notify('Finished updating editor', {dismiss: true})
 }
 
-const addService = async (serviceName) => {
-  const serviceStub = serviceName.replace(/.*\//, '').replace(/\.git$/, '')
-  app.notify(`Adding ${serviceStub}`, {phase: 'Add existing form'})
-  const addServicePath = path.join(fbServicesPath, serviceStub)
-  if (pathExists.sync(addServicePath)) {
-    return
-  }
-  const dir = addServicePath
-  let url = serviceName
-  if (!serviceName.includes('/')) {
-    url = `https://github.com/ministryofjustice/${serviceName}`
-  }
-  await git.clone({
-    dir,
-    url,
-    singleBranch: true,
-    depth: 1
-  })
-  services[serviceStub] = {}
-  app.notify(`Added ${serviceStub}`, {dismiss: true})
-}
-
-const createService = async (serviceName, createRepo) => {
-  serviceName = serviceName.replace(/\s/g, '-')
-  app.notify(`Creating ${serviceName}`, {phase: 'Create form'})
-  const newServicePath = path.join(fbServicesPath, serviceName)
-  if (pathExists.sync(newServicePath)) {
-    return
-  }
-  const dir = newServicePath
-  app.notify('Cloning fb-service-starter repo')
-  await git.clone({
-    dir,
-    url: 'https://github.com/ministryofjustice/fb-service-starter',
-    singleBranch: true,
-    depth: 1
-  })
-  const gitDir = path.join(newServicePath, '.git')
-  execSync(`rm -rf ${gitDir}`)
-  await git.init({dir})
-  services[serviceName] = {}
-  const files = glob.sync(`${dir}/**/*`, {dot:true})
-    .filter(file => !isDirectory(file))
-    .filter(file => !file.includes('.git/'))
-
-  const addFile = async (filepath) => {
-    filepath = filepath.replace(dir + '/', '')
-    try {
-      await git.add({
-        dir,
-        filepath
-      })
-    } catch (e) {
-      // ignore attempts to add ignored files
-    }
-  }
-  await Promise.all(files.map(addFile))
-
-  const gitSettings = store.get('git')
-  const {name, email, user, token} = gitSettings
-  await git.commit({
-    dir,
-    author: {
-      name,
-      email
-    },
-    message: 'Created form'
-  })
-  app.notify(`Created ${serviceName}`)
-  if (!createRepo) {
-    app.dismissNotification()
-    return
-  }
-  app.notify(`Creating ${serviceName} repository`)
-  let url = 'https://api.github.com/user/repos'
-  const json = {
-    name: serviceName,
-    auto_init: false,
-    private: false
-  }
-  await request.post({
-    url,
-    headers: {
-      'User-Agent': 'Form Builder v0.1.0',
-      'Authorization': `token ${token}`
-    },
-    json
-  })
-  await git.addRemote({
-    dir,
-    remote: 'origin',
-    url: `https://github.com/${user}/${serviceName}.git`
-  })
-  await git.push({
-    dir,
-    remote: 'origin',
-    ref: 'master',
-    token,
-  })
-  app.notify(`Created ${serviceName} repository`, {dismiss: true})
-}
-
 const installNVS = async () => {
   if (pathExists.sync(nvsPath)) {
     return
@@ -252,12 +158,14 @@ const launchApp = () => {
 
   app.store = store
   app.services = services
+  app.getServices = () => services
+  app.setService = (name, params={}) => services[name] = params
   app.updateEditor = updateEditor
-  app.addService = addService
-  app.createService = createService
+  // app.addService = addService
+  // app.createService = createService
   app.reinstallEditor = reinstallEditor  
 
-  function createWindow () {
+  function createMainWindow () {
     if (mainWindow) {
       return
     }
@@ -307,7 +215,7 @@ const launchApp = () => {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (mainWindow === null) {
-      createWindow()
+      createMainWindow()
     }
   })
 
@@ -355,7 +263,7 @@ const launchApp = () => {
 
   app.deleteService = async (serviceName) => {
     await app.stopService(serviceName)
-    const deleteServicePath = path.join(fbServicesPath, serviceName)
+    const deleteServicePath = path.join(app.paths.services, serviceName)
     rimraf.sync(deleteServicePath)
     delete services[serviceName]
   }
@@ -366,7 +274,7 @@ const launchApp = () => {
 
   // In this file you can include the rest of your app's specific main process
   // code. You can also put them in separate files and require them here.
-  createWindow()
+  createMainWindow()
 }
 
 // Stash all path refs
@@ -390,7 +298,7 @@ const fbServicesPath = path.join(fbPath, 'forms')
 app.paths.services = fbServicesPath
 execSync(`mkdir -p ${fbServicesPath}`)
 
-let existingServices = getDirectories(fbServicesPath)
+let existingServices = getDirectories(app.paths.services)
 
 existingServices.forEach(service => {
   services[service] = {}

@@ -168,7 +168,98 @@
 
 <script src="assets/govuk-frontend-design-system.min.js"></script>
     <script>
+      const { execSync } = require('child_process')
       const {app} = require('./app.js')
+      const {git} = app
+      const {pathExists, isDirectory, glob, request} = app.utils
+      const path = require('path')
+      const ipc = require('electron-better-ipc')
+
+      const createService = async (serviceName, createRepo) => {
+        serviceName = serviceName.replace(/\s/g, '-')
+        app.notify(`Creating ${serviceName}`, {phase: 'Create form'})
+        const newServicePath = path.join(app.paths.services, serviceName)
+        if (pathExists.sync(newServicePath)) {
+          return
+        }
+        const dir = newServicePath
+
+        app.notify('Cloning fb-service-starter repo')
+      
+        await git.clone({
+          dir,
+          url: 'https://github.com/ministryofjustice/fb-service-starter',
+          singleBranch: true,
+          depth: 1
+        })
+
+        const gitDir = path.join(newServicePath, '.git')
+        execSync(`rm -rf ${gitDir}`)
+
+        await git.init({dir})
+
+        app.setService(serviceName)
+
+        const files = glob.sync(`${dir}/**/*`, {dot:true})
+          .filter(file => !isDirectory(file))
+          .filter(file => !file.includes('.git/'))
+         app.notify('About to addFIle')
+        const addFile = async (filepath) => {
+          filepath = filepath.replace(dir + '/', '')
+          try {
+            await git.add({
+              dir,
+              filepath
+            })
+          } catch (e) {
+            // ignore attempts to add ignored files
+          }
+        }
+        await Promise.all(files.map(addFile))
+
+        const gitSettings = app.store.get('git')
+        const {name, email, user, token} = gitSettings
+        await git.commit({
+          dir,
+          author: {
+            name,
+            email
+          },
+          message: 'Created form'
+        })
+        app.notify(`Created ${serviceName}`)
+        if (!createRepo) {
+          app.dismissNotification()
+          return
+        }
+        app.notify(`Creating ${serviceName} repository`)
+        let url = 'https://api.github.com/user/repos'
+        const json = {
+          name: serviceName,
+          auto_init: false,
+          private: false
+        }
+        await request.post({
+          url,
+          headers: {
+            'User-Agent': 'Form Builder v0.1.0',
+            'Authorization': `token ${token}`
+          },
+          json
+        })
+        await git.addRemote({
+          dir,
+          remote: 'origin',
+          url: `https://github.com/${user}/${serviceName}.git`
+        })
+        await git.push({
+          dir,
+          remote: 'origin',
+          ref: 'master',
+          token,
+        })
+        app.notify(`Created ${serviceName} repository`, {dismiss: true})
+      }
 
       const $createForm = document.getElementById('createForm')
       const $createRepo = document.getElementById('createrepo')
@@ -179,21 +270,20 @@
         const formname = $formname.value
         if (formname) {
           const createRepo = $createRepo.checked
-          app.createService(formname, createRepo).then(() => {
+          createService(formname, createRepo).then(() => {
             document.location.href = 'index.html'
           })
         }
       })
 
-      const git = app.store.get('git') || {}
+      const gitStore = app.store.get('git') || {}
       const gitSettings = ['name', 'email', 'user', 'token']
       let gitRequirementsMet = true
       gitSettings.forEach(setting => {
-        if (!git[setting]) {
+        if (!gitStore[setting]) {
           gitRequirementsMet = false
         }
       })
-      console.log({gitRequirementsMet})
       const hideElement = ($el) => {
         $el.style = 'display:none'
       }
