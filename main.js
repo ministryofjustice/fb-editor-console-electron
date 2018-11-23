@@ -77,19 +77,15 @@ app.dismissNotification = () => {
   app.notify({dismiss: true})
 }
 
-
-
-// 49152–65535 (215 + 214 to 216 − 1) 
-
 const getDirectories = source =>
   readdirSync(source).map(name => path.join(source, name)).filter(isDirectory).map(dir => path.basename(dir))
 
 const services = {}
 
-ipc.answerRenderer('setService', async params => {
-  services[params[name]] = params
-  console.log('setService', JSON.stringify(params, null, 2))
-})
+// ipc.answerRenderer('setService', async params => {
+//   services[params[name]] = params
+//   console.log('setService', JSON.stringify(params, null, 2))
+// })
 
 const runInstallation = async (name) => {
   try {
@@ -172,7 +168,8 @@ const launchApp = () => {
     }
   })
 
-  let portCounter = 52000 // 49152
+  // 49152–65535 (215 + 214 to 216 − 1) 
+  let portCounter = 52000
   app.launchService = async (service) => {
     const serviceDetails = services[service]
     if (!serviceDetails.port) {
@@ -240,6 +237,10 @@ homeDir = path.join(homeDir, 'documents')
 const fbPath = path.join(homeDir, 'formbuilder')
 app.paths.formbuilder = fbPath
 execSync(`mkdir -p ${fbPath}`)
+
+const fbLogsPath = path.join(fbPath, 'logs')
+app.paths.logs = fbLogsPath
+execSync(`mkdir -p ${fbLogsPath}`)
 
 const nvsPath = path.join(fbPath, '.nvs')
 app.paths.nvs = nvsPath
