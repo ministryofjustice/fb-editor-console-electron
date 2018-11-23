@@ -1,9 +1,11 @@
 const { exec } = require('child_process')
+const {app} = require('./app.js')
 
-const {nvsPath, fbEditorPath, SERVICEDATA, XPORT} = process.env
-console.log('BACKGOUND?', {nvsPath, fbEditorPath, SERVICEDATA, XPORT})
+const {SERVICEDATA, XPORT} = process.env
+const {nvs, editor} = app.paths
+console.log('BACKGOUND?', {nvs, editor, SERVICEDATA, XPORT})
 // const child = exec(`. ${nvsPath}/nvs.sh && nvs use latest && cd ${fbEditorPath} && PORT=${XPORT} SERVICEDATA=${SERVICEDATA} npm start`, (err, stdout, stderr) => {})
-const child = exec(`. ${nvsPath}/nvs.sh && nvs use 10.11 && cd ${fbEditorPath} && PORT=${XPORT} SERVICEDATA=${SERVICEDATA} npm start`, (err, stdout, stderr) => {
+const child = exec(`. ${nvs}/nvs.sh && nvs use 10.11 && cd ${editor} && PORT=${XPORT} SERVICEDATA=${SERVICEDATA} npm start`, (err, stdout, stderr) => {
   if (err) {
     console.log('background server failed', err)
   }

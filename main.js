@@ -15,6 +15,9 @@ git.plugins.set('fs', fs)
 
 const ipc = require('electron-better-ipc');
 
+ipc.answerRenderer('wuh', async params => {
+  console.log('wuh', JSON.stringify(params, null, 2))
+})
 
 const Store = require('electron-store')
 const store = new Store()
@@ -22,7 +25,6 @@ const store = new Store()
 const { lstatSync, readdirSync } = fs
 const isDirectory = source => lstatSync(source).isDirectory()
 
-// const makeBackgroundWindow = require('./make-background-window')
 
 let firstInstall = false
 
@@ -30,77 +32,49 @@ let firstInstall = false
 
 const {app, BrowserWindow, Menu} = require('electron')
 
-let notificationWindow
+app.windows = {}
+
+// let notificationWindow
 let mainWindow
 
+const createNotificationWindow = () => {
+  const notificationWindow = new BrowserWindow({
+    transparent: true,
+    frame: false,
+    toolbar: false,
+    width: 400,
+    height: firstInstall ? 200: 134
+  })
+  notificationWindow.on('blur', () => {
+    notificationWindow.focus()
+  })
+  notificationWindow.loadFile('notification.html')
+  notificationWindow.hide()
+  app.windows.notificationWindow = notificationWindow
+}
+
 const displayNotification = async (message, options={}) => {
-  if (!notificationWindow) {
-    notificationWindow = new BrowserWindow({
-      xparent: options.parent ||  mainWindow,
-      xmodal: true,
-      transparent: true,
-      frame: false,
-      toolbar: false,
-      width: 400,
-      height: firstInstall ? 200: 154
-    })
-    notificationWindow.on('blur', () => {
-      notificationWindow.focus()
-    })
-    notificationWindow.loadFile('notification.html')
-    
-  }
-  if (!message) {
-    notificationWindow.hide()
-    return
-  }
-  notificationWindow.show()
-  try {
-    const disableHeader = !!mainWindow
-    const params = Object.assign(options, {message, disableHeader})
+  const params = typeof message === 'object' ? message : Object.assign(options, {message})
+  const notificationWindow = app.windows.notificationWindow
+  // try {
     await ipc.callRenderer(notificationWindow, 'send-notification', params)
-  } catch (e) {
-    //
-  }
+  // } catch (e) {
+  //   //
+  // }
+  // try {
+    // await ipc.callRenderer(notificationWindow, 'send-notification', {message:'gosh', dismiss: true})
+  // } catch(e) {}
   
   console.log('displayNotification', {message})
-  // const executeMessageScript = notificationWindow.webContents.executeJavaScript
-  // if (mainWindow) {
-  //   notificationWindow.webContents.executeJavaScript('disableHeader()')
-  // }
-  // if (options.phase) {
-  //   notificationWindow.webContents.executeJavaScript(`updatePhase("${options.phase}")`)
-  // }
-  // notificationWindow.webContents.executeJavaScript(`updateMessage("${message}")`)
-  if (options.dismiss) {
-    dismissNotification()
-  }
+
+}
+app.notify = displayNotification
+app.dismissNotification = () => {
+  app.notify({dismiss: true})
 }
 
-const dismissNotification = (delay=2000) => {
-  if (notificationWindow) {
-    setTimeout(() => {
-      notificationWindow.hide()
-    }, delay)
-  }
-}
 
 // 49152–65535 (215 + 214 to 216 − 1) 
-
-
-const notifySticky = (message) => {
-  console.log(message)
-  // return
-  notifier.notify({
-    title: 'Form Builder',
-    message,
-    timeout: 20,
-    xreply: true
-  },
-  (error, response, metadata) => {
-    // console.log(response, metadata)
-  })
-}
 
 const getDirectories = source =>
   readdirSync(source).map(name => path.join(source, name)).filter(isDirectory).map(dir => path.basename(dir))
@@ -109,14 +83,14 @@ const services = {}
 
 
 const installEditorDependencies = () => {
-  displayNotification('Installing editor dependencies')
+  app.notify('Installing editor dependencies')
   execSync(`. ${nvsPath}/nvs.sh && nvs add 10.11 && nvs use 10.11 && cd ${fbEditorPath} && npm install`)
 }
 const cloneEditor = async () => {
   if (pathExists.sync(fbEditorPath)) {
     return
   }
-  displayNotification('Cloning editor')
+  app.notify('Cloning editor')
   await git.clone({
     dir: fbEditorPath,
     url: 'https://github.com/ministryofjustice/fb-editor-node',
@@ -124,11 +98,11 @@ const cloneEditor = async () => {
     depth: 1
   })
   installEditorDependencies()
-  displayNotification('Installed editor')
+  app.notify('Installed editor')
 }
 
 const updateEditor = async () => {
-  displayNotification('Fetching updates', {phase: 'Update Editor'})
+  app.notify('Fetching updates', {phase: 'Update Editor'})
   try {
     await git.pull({
       dir: fbEditorPath,
@@ -138,15 +112,14 @@ const updateEditor = async () => {
   } catch(e) {
     // 
   }
-  displayNotification('Reinstalling editor dependencies')
+  app.notify('Reinstalling editor dependencies')
   installEditorDependencies()
-  displayNotification('Finished updating editor')
-  dismissNotification()
+  app.notify('Finished updating editor', {dismiss: true})
 }
 
 const addService = async (serviceName) => {
-  displayNotification(`Adding ${serviceName}`, {phase: 'Add existing form'})
   const serviceStub = serviceName.replace(/.*\//, '').replace(/\.git$/, '')
+  app.notify(`Adding ${serviceStub}`, {phase: 'Add existing form'})
   const addServicePath = path.join(fbServicesPath, serviceStub)
   if (pathExists.sync(addServicePath)) {
     return
@@ -163,18 +136,18 @@ const addService = async (serviceName) => {
     depth: 1
   })
   services[serviceStub] = {}
-  displayNotification(`Added ${serviceStub}`)
-  dismissNotification()
+  app.notify(`Added ${serviceStub}`, {dismiss: true})
 }
 
 const createService = async (serviceName, createRepo) => {
-  displayNotification(`Creating ${serviceName}`, {phase: 'Create form'})
+  serviceName = serviceName.replace(/\s/g, '-')
+  app.notify(`Creating ${serviceName}`, {phase: 'Create form'})
   const newServicePath = path.join(fbServicesPath, serviceName)
   if (pathExists.sync(newServicePath)) {
     return
   }
   const dir = newServicePath
-  displayNotification('Cloning fb-service-starter repo')
+  app.notify('Cloning fb-service-starter repo')
   await git.clone({
     dir,
     url: 'https://github.com/ministryofjustice/fb-service-starter',
@@ -212,12 +185,12 @@ const createService = async (serviceName, createRepo) => {
     },
     message: 'Created form'
   })
-  displayNotification(`Created ${serviceName}`)
+  app.notify(`Created ${serviceName}`)
   if (!createRepo) {
-    dismissNotification()
+    app.dismissNotification()
     return
   }
-  displayNotification(`Creating ${serviceName} repository`)
+  app.notify(`Creating ${serviceName} repository`)
   let url = 'https://api.github.com/user/repos'
   const json = {
     name: serviceName,
@@ -243,33 +216,31 @@ const createService = async (serviceName, createRepo) => {
     ref: 'master',
     token,
   })
-  displayNotification(`Created ${serviceName} repository`)
-  dismissNotification()
+  app.notify(`Created ${serviceName} repository`, {dismiss: true})
 }
 
 const installNVS = async () => {
   if (pathExists.sync(nvsPath)) {
     return
   }
-  displayNotification('Installing nvs (Node version manager)')
+  app.notify('Installing nvs (Node version manager)')
   await git.clone({
     dir: nvsPath,
     url: 'https://github.com/jasongin/nvs',
     singleBranch: true,
     depth: 1
   })
-  displayNotification(`Installed nvs at ${nvsPath}`)
+  app.notify(`Installed nvs at ${nvsPath}`)
 }
 
 const reinstallEditor = async () => {
-  displayNotification('Reinstalling', {phase: 'Reinstalling editor'})
-  displayNotification('Deleting NVS')
+  app.notify('Reinstalling', {phase: 'Reinstalling editor'})
+  app.notify('Deleting NVS')
   rimraf.sync(nvsPath)
-  displayNotification('Deleting editor')
+  app.notify('Deleting editor')
   rimraf.sync(fbEditorPath)
   await installDependencies()
-  displayNotification(`Reinstalled editor`)
-  dismissNotification()
+  app.notify(`Reinstalled editor`, {dismiss: true})
 }
 
 const installDependencies = async () => {
@@ -284,14 +255,14 @@ const launchApp = () => {
   app.updateEditor = updateEditor
   app.addService = addService
   app.createService = createService
-  app.reinstallEditor = reinstallEditor
-  app.displayNotification = displayNotification
+  app.reinstallEditor = reinstallEditor  
 
   function createWindow () {
     if (mainWindow) {
       return
     }
     mainWindow = new BrowserWindow({show: false})
+    app.windows.mainWindow = mainWindow
     mainWindow.maximize()
     mainWindow.loadFile('index.html')
     mainWindow.show()
@@ -351,12 +322,12 @@ const launchApp = () => {
     app.clearPort(serviceDetails.port)
     process.env.XPORT = serviceDetails.port
     process.env.SERVICEDATA = serviceDetails.path
-    let backgroundWindow = new BrowserWindow({show: false})
-    backgroundWindow.loadFile('background.html')
-    backgroundWindow.on('closed', function () {
-      backgroundWindow = null
+    let runServiceWindow = new BrowserWindow({show: false})
+    runServiceWindow.loadFile('run-service.html')
+    runServiceWindow.on('closed', function () {
+      runServiceWindow = null
     })
-    serviceDetails.window = backgroundWindow
+    serviceDetails.window = runServiceWindow
   }
 
   app.stopService = async (service) => {
@@ -398,27 +369,34 @@ const launchApp = () => {
   createWindow()
 }
 
+// Stash all path refs
+app.paths = {}
+
 let homeDir = ospath.home()
 homeDir = path.join(homeDir, 'documents')
 // homeDir = app.getPath('documents')
 
 const fbPath = path.join(homeDir, 'formbuilder')
 process.env.fbPath = fbPath
+app.paths.formbuilder = fbPath
 // shell.mkdir('-p', fbPath)
 execSync(`mkdir -p ${fbPath}`)
 
 const nvsPath = path.join(fbPath, '.nvs')
 process.env.nvsPath = nvsPath
+app.paths.nvs = nvsPath
 
 const fbEditorPath = path.join(fbPath, '.editor')
 process.env.fbEditorPath = fbEditorPath
+app.paths.editor = fbEditorPath
 
-const fbServicesPath = path.join(fbPath, 'services')
+const fbServicesPath = path.join(fbPath, 'forms')
 process.env.fbServicesPath = fbServicesPath
-
+app.paths.services = fbServicesPath
 execSync(`mkdir -p ${fbServicesPath}`)
-const fbServiceStarterPath = path.join(fbServicesPath, 'fb-service-starter')
-process.env.fbServiceStarterPath = fbServiceStarterPath
+
+// const fbServiceStarterPath = path.join(fbServicesPath, 'fb-service-starter')
+// process.env.fbServiceStarterPath = fbServiceStarterPath
 
 let existingServices = getDirectories(fbServicesPath)
 
@@ -427,15 +405,14 @@ existingServices.forEach(service => {
 })
 
 const setUp = async () => {
-  displayNotification('Setting up editor', {phase: 'Setting up editor'})
+  app.notify('Setting up editor', {phase: 'Setting up editor'})
   await installDependencies()
-  displayNotification('All dependencies successfully installed - launching app')
-  dismissNotification()
+  app.notify('All dependencies successfully installed - launching app', {dismiss: true})
 }
 
 const runApp = async () => {
   firstInstall = !(pathExists.sync(nvsPath) && pathExists.sync(fbEditorPath))
-  displayNotification()
+  createNotificationWindow()
   if (firstInstall) {
     try {
       await setUp()

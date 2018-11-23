@@ -216,8 +216,12 @@
       }
 
       const deleteForm = async (service) => {
+        if (!confirm(`Are you sure you want to delete ${service}?`)) {
+          return
+        }
         try {
           await app.deleteService(service)
+          app.notify(`Deleted ${service}`, {phase: 'Deleting form', dismiss: true})
           reloadPage()
         } catch (e) {
           //

@@ -1,3 +1,5 @@
+const {app} = require('./app.js')
+
 const ipc = require('electron-better-ipc');
 
 
@@ -11,23 +13,42 @@ const updateMessage = (message) => {
   document.getElementById('consoleInstallerMessage').innerHTML = message
 }
 
-ipc.answerMain('send-notification', async params => {
-  const {message, phase, dismiss, disableHeader} = params
-  // try {
-    if (disableHeader) {
-      removeHeader()
-    }
-    if (phase) {
-      updatePhase(phase)
-    }
-    if (message) {
-      updateMessage(message)
-    }
-  // } catch (e) {
-  //   return e
-  // }
+const dismissNotification = (delay=2000) => {
+  const notificationWindow = app.windows.notificationWindow
+  if (notificationWindow) {
+    setTimeout(() => {
+      notificationWindow.hide()
+    }, delay)
+  }
+}
 
-  return document.querySelector('.pane').innerHTML
-});
+ipc.answerMain('send-notification', async params => {
+  if (typeof params === 'string') {
+    params = {
+      message: params
+    }
+  }
+  const {message, phase, hide, dismiss} = params
+
+  const notificationWindow = app.windows.notificationWindow
+  if (hide) {
+    notificationWindow.hide()
+  } else {
+    notificationWindow.show()
+  }
+
+  if (app.windows.mainWindow) {
+    removeHeader()
+  }
+  if (phase) {
+    updatePhase(phase)
+  }
+  if (message) {
+    updateMessage(message)
+  }
+  if (dismiss) {
+    dismissNotification()
+  }
+})
 
 module.exports = {}
