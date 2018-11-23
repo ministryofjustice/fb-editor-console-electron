@@ -33,14 +33,15 @@ app.utils = {
   pathExists,
   isDirectory,
   glob,
-  request
+  request,
+  rimraf
 }
 app.windows = {}
 
 // let notificationWindow
 let mainWindow
 
-const createNotificationWindow = () => {
+const createNotificationWindow = async () => {
   const notificationWindow = new BrowserWindow({
     transparent: true,
     frame: false,
@@ -90,68 +91,22 @@ ipc.answerRenderer('setService', async params => {
   console.log('setService', JSON.stringify(params, null, 2))
 })
 
-const installEditorDependencies = () => {
-  app.notify('Installing editor dependencies')
-  execSync(`. ${nvsPath}/nvs.sh && nvs add 10.11 && nvs use 10.11 && cd ${fbEditorPath} && npm install`)
-}
-const cloneEditor = async () => {
-  if (pathExists.sync(fbEditorPath)) {
-    return
-  }
-  app.notify('Cloning editor')
-  await git.clone({
-    dir: fbEditorPath,
-    url: 'https://github.com/ministryofjustice/fb-editor-node',
-    singleBranch: true,
-    depth: 1
-  })
-  installEditorDependencies()
-  app.notify('Installed editor')
-}
-
-const updateEditor = async () => {
-  app.notify('Fetching updates', {phase: 'Update Editor'})
+const runInstallation = async (name) => {
   try {
-    await git.pull({
-      dir: fbEditorPath,
-      ref: 'master',
-      singleBranch: true
-    })
-  } catch(e) {
-    // 
+    await ipc.callRenderer(app.windows.installation, name)
+  } catch (e) {
+    console.log(`Installation: ${name} failed`)
   }
-  app.notify('Reinstalling editor dependencies')
-  installEditorDependencies()
-  app.notify('Finished updating editor', {dismiss: true})
-}
 
-const installNVS = async () => {
-  if (pathExists.sync(nvsPath)) {
-    return
-  }
-  app.notify('Installing nvs (Node version manager)')
-  await git.clone({
-    dir: nvsPath,
-    url: 'https://github.com/jasongin/nvs',
-    singleBranch: true,
-    depth: 1
-  })
-  app.notify(`Installed nvs at ${nvsPath}`)
 }
-
-const reinstallEditor = async () => {
-  app.notify('Reinstalling', {phase: 'Reinstalling editor'})
-  app.notify('Deleting NVS')
-  rimraf.sync(nvsPath)
-  app.notify('Deleting editor')
-  rimraf.sync(fbEditorPath)
-  await installDependencies()
-  app.notify(`Reinstalled editor`, {dismiss: true})
+app.updateEditor = async () => {
+  await runInstallation('updateEditor')
 }
-
-const installDependencies = async () => {
-  await installNVS()
-  await cloneEditor()
+app.reinstallEditor = async () => {
+  await runInstallation('reinstallEditor')
+}
+app.installEditor = async () => {
+  await runInstallation('installEditor')
 }
 
 const launchApp = () => {
@@ -160,10 +115,8 @@ const launchApp = () => {
   app.services = services
   app.getServices = () => services
   app.setService = (name, params={}) => services[name] = params
-  app.updateEditor = updateEditor
   // app.addService = addService
   // app.createService = createService
-  app.reinstallEditor = reinstallEditor  
 
   function createMainWindow () {
     if (mainWindow) {
@@ -306,14 +259,20 @@ existingServices.forEach(service => {
 
 const setUp = async () => {
   app.notify('Setting up editor', {phase: 'Setting up editor'})
-  await installDependencies()
+  await app.installEditor()
   app.notify('All dependencies successfully installed - launching app', {dismiss: true})
 }
 
 const runApp = async () => {
   firstInstall = !(pathExists.sync(nvsPath) && pathExists.sync(fbEditorPath))
-  createNotificationWindow()
+  await createNotificationWindow()
+
+  let installationWindow = new BrowserWindow({show: false})
+  installationWindow.loadFile('installation.html')
+  app.windows.installation = installationWindow
+
   if (firstInstall) {
+    await sleep(1000)
     try {
       await setUp()
     } catch (e) {
@@ -330,11 +289,11 @@ app.on('ready', () => {
 })
 
 
-// const timeout = (ms) => {
-//   return new Promise(resolve => setTimeout(resolve, ms));
-// }
-// const sleep = async (t = 3000) => {
-//   console.log('sleeping...')
-//   await timeout(t);
-//   console.log('waking up...')
-// }
+const timeout = (ms) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+const sleep = async (t = 3000) => {
+  console.log('sleeping...')
+  await timeout(t);
+  console.log('waking up...')
+}
