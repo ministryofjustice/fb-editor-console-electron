@@ -230,6 +230,7 @@
           git[setting] = $setting.value || ''
         })
         app.store.set('git', git)
+        app.displayNotification('Saved settings', {phase: 'Github settings', dismiss: true})
       })
 
       const $tokenHowTo = document.getElementById('tokenHowTo')

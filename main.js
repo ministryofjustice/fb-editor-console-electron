@@ -1,7 +1,3 @@
-// Create service - and now add it to github - or 
-// Add a service that exists on github / repo location
-
-// const shell = require('shelljs')
 const { exec, execSync, spawnSync } = require('child_process')
 const path = require('path')
 const pathExists = require('path-exists')
@@ -17,24 +13,81 @@ const fs = require('fs')
 const git = require('isomorphic-git')
 git.plugins.set('fs', fs)
 
+const ipc = require('electron-better-ipc');
+
+
 const Store = require('electron-store')
 const store = new Store()
 
 const { lstatSync, readdirSync } = fs
 const isDirectory = source => lstatSync(source).isDirectory()
 
-const makeBackgroundWindow = require('./make-background-window')
-
-// 49152–65535 (215 + 214 to 216 − 1) 
+// const makeBackgroundWindow = require('./make-background-window')
 
 let firstInstall = false
 
-// const NotificationCenter = require('node-notifier').NotificationCenter
+// Modules to control application life and create native browser window
 
-// var notifier = new NotificationCenter({
-//   withFallback: false, // Use Growl Fallback if <= 10.8
-//   customPath: void 0 // Relative/Absolute path to binary if you want to use your own fork of terminal-notifier
-// })
+const {app, BrowserWindow, Menu} = require('electron')
+
+let notificationWindow
+let mainWindow
+
+const displayNotification = async (message, options={}) => {
+  if (!notificationWindow) {
+    notificationWindow = new BrowserWindow({
+      xparent: options.parent ||  mainWindow,
+      xmodal: true,
+      transparent: true,
+      frame: false,
+      toolbar: false,
+      width: 400,
+      height: firstInstall ? 200: 154
+    })
+    notificationWindow.on('blur', () => {
+      notificationWindow.focus()
+    })
+    notificationWindow.loadFile('notification.html')
+    
+  }
+  if (!message) {
+    notificationWindow.hide()
+    return
+  }
+  notificationWindow.show()
+  try {
+    const disableHeader = !!mainWindow
+    const params = Object.assign(options, {message, disableHeader})
+    await ipc.callRenderer(notificationWindow, 'send-notification', params)
+  } catch (e) {
+    //
+  }
+  
+  console.log('displayNotification', {message})
+  // const executeMessageScript = notificationWindow.webContents.executeJavaScript
+  // if (mainWindow) {
+  //   notificationWindow.webContents.executeJavaScript('disableHeader()')
+  // }
+  // if (options.phase) {
+  //   notificationWindow.webContents.executeJavaScript(`updatePhase("${options.phase}")`)
+  // }
+  // notificationWindow.webContents.executeJavaScript(`updateMessage("${message}")`)
+  if (options.dismiss) {
+    dismissNotification()
+  }
+}
+
+const dismissNotification = (delay=2000) => {
+  if (notificationWindow) {
+    setTimeout(() => {
+      notificationWindow.hide()
+    }, delay)
+  }
+}
+
+// 49152–65535 (215 + 214 to 216 − 1) 
+
+
 const notifySticky = (message) => {
   console.log(message)
   // return
@@ -56,61 +109,49 @@ const services = {}
 
 
 const installEditorDependencies = () => {
+  displayNotification('Installing editor dependencies')
   execSync(`. ${nvsPath}/nvs.sh && nvs add 10.11 && nvs use 10.11 && cd ${fbEditorPath} && npm install`)
 }
 const cloneEditor = async () => {
   if (pathExists.sync(fbEditorPath)) {
     return
   }
-  notifySticky('Installing editor')
+  displayNotification('Cloning editor')
   await git.clone({
     dir: fbEditorPath,
     url: 'https://github.com/ministryofjustice/fb-editor-node',
     singleBranch: true,
     depth: 1
   })
-  notifySticky('Installing editor dependencies')
-  // execSync(`. ${nvsPath}/nvs.sh && nvs add latest && nvs use latest && cd ${fbEditorPath} && npm install`)
-  // execSync(`. ${nvsPath}/nvs.sh && nvs add 10.11 && nvs use 10.11 && cd ${fbEditorPath} && npm install`)
   installEditorDependencies()
-  notifySticky('Installed editor')
-  // notifySticky('Please restart Form Builder')
+  displayNotification('Installed editor')
 }
 
 const updateEditor = async () => {
-  notifySticky('Updating editor')
-  await git.pull({
-    dir: fbEditorPath,
-    ref: 'master',
-    singleBranch: true
-  })
-  installEditorDependencies()
-  notifySticky('Updated editor')
-}
-
-const cloneService = async () => {
-  firstInstall = true
-  if (pathExists.sync(fbServiceStarterPath)) {
-    return
+  displayNotification('Fetching updates', {phase: 'Update Editor'})
+  try {
+    await git.pull({
+      dir: fbEditorPath,
+      ref: 'master',
+      singleBranch: true
+    })
+  } catch(e) {
+    // 
   }
-  notifySticky('Installing service starter')
-  await git.clone({
-    dir: fbServiceStarterPath,
-    url: 'https://github.com/ministryofjustice/fb-service-starter',
-    singleBranch: true,
-    depth: 1
-  })
-  notifySticky('Cloned service')
+  displayNotification('Reinstalling editor dependencies')
+  installEditorDependencies()
+  displayNotification('Finished updating editor')
+  dismissNotification()
 }
 
 const addService = async (serviceName) => {
+  displayNotification(`Adding ${serviceName}`, {phase: 'Add existing form'})
   const serviceStub = serviceName.replace(/.*\//, '').replace(/\.git$/, '')
   const addServicePath = path.join(fbServicesPath, serviceStub)
   if (pathExists.sync(addServicePath)) {
     return
   }
   const dir = addServicePath
-  // notifySticky(`Adding ${serviceStub}`)
   let url = serviceName
   if (!serviceName.includes('/')) {
     url = `https://github.com/ministryofjustice/${serviceName}`
@@ -122,16 +163,18 @@ const addService = async (serviceName) => {
     depth: 1
   })
   services[serviceStub] = {}
-  notifySticky(`Added ${serviceStub}`)
+  displayNotification(`Added ${serviceStub}`)
+  dismissNotification()
 }
 
 const createService = async (serviceName, createRepo) => {
+  displayNotification(`Creating ${serviceName}`, {phase: 'Create form'})
   const newServicePath = path.join(fbServicesPath, serviceName)
   if (pathExists.sync(newServicePath)) {
     return
   }
   const dir = newServicePath
-  // notifySticky('Cloning service starter')
+  displayNotification('Cloning fb-service-starter repo')
   await git.clone({
     dir,
     url: 'https://github.com/ministryofjustice/fb-service-starter',
@@ -169,10 +212,12 @@ const createService = async (serviceName, createRepo) => {
     },
     message: 'Created form'
   })
-  notifySticky(`Created ${serviceName}`)
+  displayNotification(`Created ${serviceName}`)
   if (!createRepo) {
+    dismissNotification()
     return
   }
+  displayNotification(`Creating ${serviceName} repository`)
   let url = 'https://api.github.com/user/repos'
   const json = {
     name: serviceName,
@@ -198,28 +243,33 @@ const createService = async (serviceName, createRepo) => {
     ref: 'master',
     token,
   })
+  displayNotification(`Created ${serviceName} repository`)
+  dismissNotification()
 }
 
 const installNVS = async () => {
   if (pathExists.sync(nvsPath)) {
     return
   }
-  notifySticky('Installing nvs (Node version manager)')
+  displayNotification('Installing nvs (Node version manager)')
   await git.clone({
     dir: nvsPath,
     url: 'https://github.com/jasongin/nvs',
     singleBranch: true,
     depth: 1
   })
-  notifySticky(`Installed nvs at ${nvsPath}`)
+  displayNotification(`Installed nvs at ${nvsPath}`)
 }
 
 const reinstallEditor = async () => {
-  notifySticky(`Reinstalling editor`)
-  rimraf.sync(fbEditorPath)
+  displayNotification('Reinstalling', {phase: 'Reinstalling editor'})
+  displayNotification('Deleting NVS')
   rimraf.sync(nvsPath)
+  displayNotification('Deleting editor')
+  rimraf.sync(fbEditorPath)
   await installDependencies()
-  notifySticky(`Reinstalled editor`)
+  displayNotification(`Reinstalled editor`)
+  dismissNotification()
 }
 
 const installDependencies = async () => {
@@ -227,14 +277,7 @@ const installDependencies = async () => {
   await cloneEditor()
 }
 
-
-// Modules to control application life and create native browser window
-
-
 const launchApp = () => {
-  // notifySticky('Launching app')
-
-  const {app, BrowserWindow, Menu} = require('electron')
 
   app.store = store
   app.services = services
@@ -242,33 +285,16 @@ const launchApp = () => {
   app.addService = addService
   app.createService = createService
   app.reinstallEditor = reinstallEditor
-
-  // Keep a global reference of the window object, if you don't, the window will
-  // be closed automatically when the JavaScript object is garbage collected.
-  let mainWindow
+  app.displayNotification = displayNotification
 
   function createWindow () {
     if (mainWindow) {
       return
     }
-    // notifySticky('Creating window')
-    // Create the browser window.
     mainWindow = new BrowserWindow({show: false})
     mainWindow.maximize()
-    // and load the index.html of the app.
     mainWindow.loadFile('index.html')
     mainWindow.show()
-
-    // mainWindow.webContents.openDevTools()
-
-    // process.env.XPORT = 5001
-    // makeBackgroundWindow()
-    // setTimeout(() => {
-    //   process.env.XPORT = 5555
-    //   makeBackgroundWindow()
-    // })
-
-    // Open the DevTools.
     // mainWindow.webContents.openDevTools()
 
     var template = [{
@@ -292,29 +318,10 @@ const launchApp = () => {
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 
-    // Emitted when the window is closed.
     mainWindow.on('closed', function () {
-      // Dereference the window object, usually you would store windows
-      // in an array if your app supports multi windows, this is the time
-      // when you should delete the corresponding element.
       mainWindow = null
     })
   }
-
-  // This method will be called when Electron has finished
-  // initialization and is ready to create browser windows.
-  // Some APIs can only be used after this event occurs.
-  // notifySticky('Registering ready method')
-  
-
-  // if (firstInstall) {
-    setTimeout(() => {
-      console.log('setTimeout createWindow')
-      createWindow()
-    }, 5000)
-  // } else {
-    app.on('ready', createWindow)
-  // }
 
   // Quit when all windows are closed.
   app.on('window-all-closed', function () {
@@ -333,7 +340,6 @@ const launchApp = () => {
     }
   })
 
-
   let portCounter = 52000 // 49152
   app.launchService = async (service) => {
     const serviceDetails = services[service]
@@ -346,9 +352,7 @@ const launchApp = () => {
     process.env.XPORT = serviceDetails.port
     process.env.SERVICEDATA = serviceDetails.path
     let backgroundWindow = new BrowserWindow({show: false})
-    // let backgroundWindow = new BrowserWindow({width: 800, height: 600})
     backgroundWindow.loadFile('background.html')
-    // backgroundWindow.webContents.openDevTools()
     backgroundWindow.on('closed', function () {
       backgroundWindow = null
     })
@@ -375,7 +379,7 @@ const launchApp = () => {
 
   app.openService = async (service) => {
     const serviceDetails = services[service]
-    opn(`http://localhost:${serviceDetails.port}`)
+    opn(`http://localhost:${serviceDetails.port}/admin/flow`)
   }
 
   app.deleteService = async (serviceName) => {
@@ -391,6 +395,7 @@ const launchApp = () => {
 
   // In this file you can include the rest of your app's specific main process
   // code. You can also put them in separate files and require them here.
+  createWindow()
 }
 
 let homeDir = ospath.home()
@@ -422,31 +427,30 @@ existingServices.forEach(service => {
 })
 
 const setUp = async () => {
+  displayNotification('Setting up editor', {phase: 'Setting up editor'})
   await installDependencies()
-  if (firstInstall) {
-    notifySticky('All dependencies installed - launching app')
-  }
-  // await cloneService()
-
-
-  // const PORT = 4321
-  // notifySticky(`Starting editor - PORT=${PORT} SERVICEDATA=${fbServiceStarterPath} npm start`)
-
-  //   exec(`. ${nvsPath}/nvs.sh && nvs use latest && cd ${fbEditorPath} && PORT=${PORT} SERVICEDATA=${fbServiceStarterPath} npm start`, (err, stdout, stderr) => {})
-
-
+  displayNotification('All dependencies successfully installed - launching app')
+  dismissNotification()
 }
 
 const runApp = async () => {
-  try {
-    await setUp()
-  } catch (e) {
-    console.log('Setup went wrong', e)
+  firstInstall = !(pathExists.sync(nvsPath) && pathExists.sync(fbEditorPath))
+  displayNotification()
+  if (firstInstall) {
+    try {
+      await setUp()
+    } catch (e) {
+      console.log('Setup went wrong', e)
+    }
   }
+  console.log('Launching app')
   launchApp()
 }
 
-runApp()
+app.on('ready', () => {
+  console.log('Running the app')
+  runApp()
+})
 
 
 // const timeout = (ms) => {
