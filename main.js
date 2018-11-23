@@ -316,11 +316,11 @@ const launchApp = () => {
     const serviceDetails = services[service]
     if (!serviceDetails.port) {
       serviceDetails.port = portCounter++
-      serviceDetails.path = `${process.env.fbServicesPath}/${service}`
+      serviceDetails.path = `${app.paths.services}/${service}`
       serviceDetails.running = false
     }
     app.clearPort(serviceDetails.port)
-    process.env.XPORT = serviceDetails.port
+    process.env.SERVICEPORT = serviceDetails.port
     process.env.SERVICEDATA = serviceDetails.path
     let runServiceWindow = new BrowserWindow({show: false})
     runServiceWindow.loadFile('run-service.html')
@@ -377,26 +377,18 @@ homeDir = path.join(homeDir, 'documents')
 // homeDir = app.getPath('documents')
 
 const fbPath = path.join(homeDir, 'formbuilder')
-process.env.fbPath = fbPath
 app.paths.formbuilder = fbPath
-// shell.mkdir('-p', fbPath)
 execSync(`mkdir -p ${fbPath}`)
 
 const nvsPath = path.join(fbPath, '.nvs')
-process.env.nvsPath = nvsPath
 app.paths.nvs = nvsPath
 
 const fbEditorPath = path.join(fbPath, '.editor')
-process.env.fbEditorPath = fbEditorPath
 app.paths.editor = fbEditorPath
 
 const fbServicesPath = path.join(fbPath, 'forms')
-process.env.fbServicesPath = fbServicesPath
 app.paths.services = fbServicesPath
 execSync(`mkdir -p ${fbServicesPath}`)
-
-// const fbServiceStarterPath = path.join(fbServicesPath, 'fb-service-starter')
-// process.env.fbServiceStarterPath = fbServiceStarterPath
 
 let existingServices = getDirectories(fbServicesPath)
 
