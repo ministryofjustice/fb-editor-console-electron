@@ -1,4 +1,4 @@
-# fb-editor-electron
+# fb-editor-console-electron
 
 ## License
 

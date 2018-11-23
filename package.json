@@ -1,18 +1,18 @@
 {
-  "name": "fb-editor-electron",
-  "productName": "Form Builder",
+  "name": "fb-editor-console-electron",
+  "productName": "Form Builder Console",
   "version": "0.0.1",
-  "description": "Form Builder electron app",
+  "description": "Form Builder Console",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
   },
-  "repository": "https://github.com/ministryofjustice/fb-editor-electron",
+  "repository": "https://github.com/ministryofjustice/fb-editor-console-electron",
   "keywords": [
     "Electron",
     "Form Builder"
   ],
-  "author": "GitHub",
+  "author": "alex.robinson@digital.justice.gov.uk",
   "license": "MIT",
   "devDependencies": {
     "electron": "^3.0.8",
