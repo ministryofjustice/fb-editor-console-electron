@@ -1,7 +1,6 @@
 const {app} = require('./app.js')
 
-const ipc = require('electron-better-ipc');
-
+const ipc = require('electron-better-ipc')
 
 const removeHeader = () => {
   document.querySelector('.pane').className += ' pane--short'
@@ -15,7 +14,7 @@ const updateMessage = (message) => {
   document.getElementById('consoleInstallerMessage').innerHTML = message
 }
 
-const dismissNotification = (delay=2000) => {
+const dismissNotification = (delay = 2000) => {
   const spinnerImg = document.querySelector('.spinner img')
   spinnerImg.src = spinnerImg.src.replace(/-animated.gif$/, '.png')
   const notificationWindow = app.windows.notificationWindow
@@ -33,7 +32,6 @@ ipc.answerMain('send-notification', async params => {
     }
   }
   const {message, phase, hide, dismiss} = params
-
 
   const spinnerImg = document.querySelector('.spinner img')
   if (!spinnerImg.src.includes('animated.gif')) {

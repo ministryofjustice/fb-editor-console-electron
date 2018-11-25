@@ -192,7 +192,19 @@
   <section class="govuk-tabs__panel govuk-tabs__panel--hidden" id="updates">
     <h2 class="govuk-heading-l govuk-visually-hidden">Updates</h2>
 
-    <p><a class="govuk-link" href="#" onclick="app.updateEditor()">Update editor</a></p>
+    <h3 class="govuk-heading-m">Editor</h3>
+    <a class="govuk-link" href="#" onclick="app.updateEditor()">Update editor</a>
+    <!--
+    <div class="updates-status">
+    <div class="updates-not-required">
+    <p>There are no updates</p>
+    </div>
+    <div class="updates-required js-hidden">
+    <p>The editor is out of date and should be updated</p>
+    <a class="govuk-link" href="#" onclick="app.updateEditor()">Update editor</a>
+    </div>
+    </div>
+    -->
 
     <p><a class="govuk-link" href="#" onclick="app.reinstallEditor()">Reinstall editor</a></p>
 
@@ -239,6 +251,45 @@
       $tokenHowTo.addEventListener('click', () => {
         app.openExternal('https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/')
       })
+
+      const checkForRepoUpdates = async (dir, url) => {
+        const {git} = app
+        let actual
+        let latest
+        /* try {
+          console.log('GITTING')
+          const commits = await git.log({
+            dir,
+            depth: 1,
+            ref: 'master'
+          })
+          console.log(commits)
+          actual = commits[0].oid
+        } catch(e) {console.log('fetch failed', e)} */
+
+        try {
+          const remote = await git.fetch({
+            dir,
+            url,
+            ref: 'master',
+            depth: 1,
+            singleBranch: true,
+            tags: false
+          })
+         latest = remote.fetchHead
+        } catch(e) {console.log('fetch failed', e)}
+        // console.log(actual + ', ' + latest)
+        return actual === latest
+      }
+      /*
+      checkForRepoUpdates(app.paths.editor, 'https://github.com/ministryofjustice/fb-editor-node').then(updateRequired => {
+        updateRequired = true
+        const requiredMethod = updateRequired ? 'remove' : 'add'
+        const notRequiredMethod = updateRequired ? 'add' : 'remove'
+        document.querySelector('.updates-required').classList[requiredMethod]('js-hidden')
+        document.querySelector('.updates-not-required').classList[notRequiredMethod]('js-hidden')
+      })
+      */
       
     </script>
   </body>

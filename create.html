@@ -117,24 +117,33 @@
 
 <div class="govuk-grid-column-two-thirds">
 
-
-
-
-
-
 <h1 class="govuk-heading-xl">Create new form</h1>
 
+<div class="govuk-error-summary js-hidden" aria-labelledby="error-summary-title" role="alert" tabindex="-1" data-module="error-summary">
+  <h2 class="govuk-error-summary__title" id="error-summary-title">
+    There is a problem
+  </h2>
+  <div class="govuk-error-summary__body">
+    <ul class="govuk-list govuk-error-summary__list">
+      <li>
+        <a href="#createrepo" id="errorMessage"></a>
+      </li>
+    </ul>
+  </div>
+</div>
 
 
 <!-- CONTENTS -->
-    <div class="govuk-form-group">
+    <div class="govuk-form-group govuk-form-group-target">
       <label class="govuk-label" for="formname">
         Form name
       </label>
       <span class="govuk-hint">
-        The name should contain no spaces
+        The name should contain only letters and numbers
       </span>
-      <input class="govuk-input" id="formname" name="formname" type="text">
+      <span id="input-error" class="govuk-error-message">
+      </span>
+      <input class="govuk-input govuk-input-target" id="formname" name="formname" type="text" pattern="^[a-z0-9]+$">
     </div>
     <div class="govuk-form-group createrepo-group">
       <div class="govuk-checkboxes__item">
@@ -175,14 +184,34 @@
       const path = require('path')
       const ipc = require('electron-better-ipc')
 
+      const addError = (errorMessage) => {
+        document.querySelector('.govuk-error-summary').classList.remove('js-hidden')
+        document.querySelector('.govuk-form-group-target').classList.add('govuk-form-group--error')
+        document.querySelector('.govuk-input-target').classList.add('govuk-input--error')
+        document.querySelector('#errorMessage').innerHTML = errorMessage
+        document.querySelector('.govuk-error-message').innerHTML = errorMessage
+      }
+      const removeError = () => {
+        document.querySelector('.govuk-error-summary').classList.add('js-hidden')
+        document.querySelector('.govuk-form-group-target').classList.remove('govuk-form-group--error')
+        document.querySelector('.govuk-input-target').classList.remove('govuk-input--error')
+      }
+
+      const $input = document.querySelector('.govuk-input-target')
+      $input.addEventListener('focus', removeError)
+      $input.addEventListener('keypress', (e) => {
+        if (!e.key.match(/[a-z0-9-_]/i)) {
+          e.preventDefault()
+        }
+      })
+
       const createService = async (serviceName, createRepo) => {
         serviceName = serviceName.replace(/\s/g, '-')
-        app.notify(`Creating ${serviceName}`, {phase: 'Create form'})
         const newServicePath = path.join(app.paths.services, serviceName)
         if (pathExists.sync(newServicePath)) {
-          app.notify(`${serviceName} already exists`, {dismiss: true})
-          return
+          throw (`${serviceName} already exists`)
         }
+        app.notify(`Creating ${serviceName}`, {phase: 'Create form'})
         const dir = newServicePath
 
         app.notify('Cloning fb-service-starter repo')
@@ -240,25 +269,34 @@
           auto_init: false,
           private: false
         }
-        await request.post({
-          url,
-          headers: {
-            'User-Agent': 'Form Builder v0.1.0',
-            'Authorization': `token ${token}`
-          },
-          json
-        })
-        await git.addRemote({
-          dir,
-          remote: 'origin',
-          url: `https://github.com/${user}/${serviceName}.git`
-        })
-        await git.push({
-          dir,
-          remote: 'origin',
-          ref: 'master',
-          token,
-        })
+        try {
+          await request.post({
+            url,
+            headers: {
+              'User-Agent': 'Form Builder v0.1.0',
+              'Authorization': `token ${token}`
+            },
+            json
+          })
+          await git.addRemote({
+            dir,
+            remote: 'origin',
+            url: `https://github.com/${user}/${serviceName}.git`
+          })
+          await git.push({
+            dir,
+            remote: 'origin',
+            ref: 'master',
+            token,
+          })
+        } catch (e) {
+          app.dismissNotification()
+          let errorMessage = e.error.errors[0].message
+          if (errorMessage === 'name already exists on this account') {
+            errorMessage = `${serviceName} already exists on this account`
+          }
+          throw errorMessage
+        }
         app.notify(`Created ${serviceName} repository`, {dismiss: true})
       }
 
@@ -271,9 +309,15 @@
         const formname = $formname.value
         if (formname) {
           const createRepo = $createRepo.checked
-          createService(formname, createRepo).then(() => {
-            document.location.href = 'index.html'
-          })
+          createService(formname, createRepo)
+            .then(() => {
+              document.location.href = 'index.html'
+            })
+            .catch(err => {
+              addError(err)
+            })
+        } else {
+          addError('Enter a name for the new form')
         }
       })
 

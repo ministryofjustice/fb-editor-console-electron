@@ -124,14 +124,28 @@
 
 <h1 class="govuk-heading-xl">Add exisiting form</h1>
 
+<div class="govuk-error-summary js-hidden" aria-labelledby="error-summary-title" role="alert" tabindex="-1" data-module="error-summary">
+  <h2 class="govuk-error-summary__title" id="error-summary-title">
+    There is a problem
+  </h2>
+  <div class="govuk-error-summary__body">
+    <ul class="govuk-list govuk-error-summary__list">
+      <li>
+        <a href="#repoaddress" id="errorMessage"></a>
+      </li>
+    </ul>
+  </div>
+</div>
 
 
 <!-- CONTENTS -->
-    <div class="govuk-form-group">
+    <div class="govuk-form-group govuk-form-group-target">
       <label class="govuk-label" for="repoaddress">
         Repository URL
       </label>
-      <input class="govuk-input" id="repoaddress" name="repoaddress" type="text">
+      <span id="input-error" class="govuk-error-message">
+      </span>
+      <input class="govuk-input govuk-input-target" id="repoaddress" name="repoaddress" type="text">
     </div>
     
     <button type="submit" class="govuk-button" id="addForm">
@@ -160,12 +174,32 @@
       const path = require('path')
       const ipc = require('electron-better-ipc')
 
+      const addError = (errorMessage) => {
+        document.querySelector('.govuk-error-summary').classList.remove('js-hidden')
+        document.querySelector('.govuk-form-group-target').classList.add('govuk-form-group--error')
+        document.querySelector('.govuk-input-target').classList.add('govuk-input--error')
+        document.querySelector('#errorMessage').innerHTML = errorMessage
+        document.querySelector('.govuk-error-message').innerHTML = errorMessage
+      }
+      const removeError = () => {
+        document.querySelector('.govuk-error-summary').classList.add('js-hidden')
+        document.querySelector('.govuk-form-group-target').classList.remove('govuk-form-group--error')
+        document.querySelector('.govuk-input-target').classList.remove('govuk-input--error')
+      }
+
+      const $input = document.querySelector('.govuk-input-target')
+      $input.addEventListener('focus', removeError)
+      $input.addEventListener('keypress', (e) => {
+        if (!e.key.match(/[a-z0-9-_]/i)) {
+          e.preventDefault()
+        }
+      })
+
       const addService = async (serviceName) => {
         const serviceStub = serviceName.replace(/.*\//, '').replace(/\.git$/, '')
-        app.notify(`Checking ${serviceStub}`, {phase: 'Add existing form'})
         const addServicePath = path.join(app.paths.services, serviceStub)
         if (app.utils.pathExists.sync(addServicePath)) {
-          return
+          throw `${serviceStub} already exists`
         }
         app.notify(`Adding ${serviceStub}`, {phase: 'Add existing form'})
         const dir = addServicePath
@@ -173,13 +207,23 @@
         if (!serviceName.includes('/')) {
           url = `https://github.com/ministryofjustice/${serviceName}`
         }
-        await git.clone({
-          dir,
-          url,
-          singleBranch: true,
-          depth: 1
-        })
-        // await ipc.callMain('setService', {name:serviceStub})
+        try {
+          await git.clone({
+            dir,
+            url,
+            singleBranch: true,
+            depth: 1
+          })
+        } catch (e) {
+          app.dismissNotification()
+          let errorMessage
+          if (e.data && e.data.statusCode === 401) {
+            errorMessage = 'Either your credentials are incorrect or the repository does not exist'
+          } else {
+            errorMessage = JSON.stringify(e)
+          }
+          throw errorMessage
+        }
         app.setService(serviceStub)
         app.notify(`Added ${serviceStub}`, {dismiss: true})
       }
@@ -192,7 +236,11 @@
           
           addService(repoaddress).then(() => {
             document.location.href = 'index.html'
-          }).catch(e => console.log(e))
+          }).catch(e => {
+            addError(e)
+          })
+        } else {
+          addError('Enter the repository URL')
         }
       })
 

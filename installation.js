@@ -1,7 +1,7 @@
 const {app} = require('./app.js')
 const {git} = app
-const { execSync } = require('child_process')
-const {pathExists, rimraf} = app.utils 
+const {execSync} = require('child_process')
+const {pathExists, rimraf} = app.utils
 
 const ipc = require('electron-better-ipc')
 
@@ -32,8 +32,8 @@ const updateEditor = async () => {
       ref: 'master',
       singleBranch: true
     })
-  } catch(e) {
-    // 
+  } catch (e) {
+    //
   }
   app.notify('Reinstalling editor dependencies')
   installEditorDependencies(true)
@@ -61,14 +61,13 @@ const reinstallEditor = async () => {
   app.notify('Deleting editor')
   rimraf.sync(app.paths.editor)
   await installDependencies()
-  app.notify(`Reinstalled editor`, {dismiss: true})
+  app.notify('Reinstalled editor', {dismiss: true})
 }
 
 const installDependencies = async () => {
   await installNVS()
   await cloneEditor()
 }
-
 
 ipc.answerMain('updateEditor', async params => {
   await updateEditor()
@@ -78,10 +77,9 @@ ipc.answerMain('reinstallEditor', async params => {
   await reinstallEditor()
 })
 
-
 ipc.answerMain('installEditor', async params => {
   await installDependencies()
-  app.notify(`Finsihed installing editor`, {dismiss: true})
+  app.notify('Finsihed installing editor', {dismiss: true})
 })
 
 module.exports = {}

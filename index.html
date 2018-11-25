@@ -161,12 +161,13 @@
 <script src="assets/govuk-frontend-design-system.min.js"></script>
     <script>
       const {app} = require('./app.js')
+      const ipc = require('electron-better-ipc')
 
       const hideElement = ($el) => {
         $el.style = 'display:none'
       }
 
-      let services = app.services
+      // let services = app.services
       const $services = document.getElementById('services')
       const $servicesInstructions = document.getElementById('servicesInstructions')
 
@@ -182,7 +183,8 @@
       const startForm = async (service) => {
         try {
           await app.launchService(service)
-          reloadPage()
+          listServices()
+          // reloadPage()
         } catch (e) {
           //
         }
@@ -191,7 +193,7 @@
       const stopForm = async (service) => {
         try {
           await app.stopService(service)
-          reloadPage()
+          listServices()
         } catch (e) {
           //
         }
@@ -201,7 +203,7 @@
         return
         try {
           await app.restartService(service)
-          reloadPage()
+          listServices()
         } catch (e) {
           //
         }
@@ -222,7 +224,7 @@
         try {
           await app.deleteService(service)
           app.notify(`Deleted ${service}`, {phase: 'Deleting form', dismiss: true})
-          reloadPage()
+          listServices()
         } catch (e) {
           //
         }
@@ -232,7 +234,7 @@
         return
         try {
           await app.archiveService(service)
-          reloadPage()
+          listServices()
         } catch (e) {
           //
         }
@@ -241,10 +243,18 @@
       const reloadPage = () => {
         document.location.reload()
       }
-      const listServices = () => {
-        // let services = app.services
+      const strings = {
+        status: {
+          running: 'Running',
+          starting: 'Starting',
+          stopped: 'Not running'
+        }
+      }
+      const listServices = async (openService) => {
+        // alert('damn')
+        let services = await ipc.callMain('getServices')
         const serviceList = Object.keys(services)
-        // alert(serviceList)
+        // alert(JSON.stringify(services))
         // alert(Object.keys(app.getServices()))
         if (!serviceList.length) {
           hideElement($services)
@@ -253,13 +263,14 @@
         hideElement($servicesInstructions)
         let output = ''
         serviceList.forEach(service => {
-          const running = !!services[service].window
-          const status = running ? 'Running' : 'Not running'
+          const serviceStatus = services[service].status || 'stopped'
+          const running = serviceStatus === 'running'
+          const status = strings.status[serviceStatus]
           output += `
             <tr class="govuk-table__row">
               <th class="govuk-table__header" scope="row">${service}</th>
               <td class="govuk-table__cell">
-              <span class="formStatus${running ? ' formStatus--running' : ''}">${status}</span>
+              <span class="formStatus formStatus--${serviceStatus}">${status}</span>
               </td>
               <td class="govuk-table__cell cell-nowrap">
               <a href="#" class="govuk-link${running ? ' hidden' : ''}" onclick="startForm('${service}')">Start</a>
@@ -270,7 +281,11 @@
               <td class="govuk-table__cell"><a href="#" class="govuk-link" onclick="deleteForm('${service}')">Delete</a></td>
             </tr>
           `
-          // $services.insertAdjacentHTML('beforeend', `<li class="service">${service} --- <span onclick="app.launchService('${service}')">Start</span> <span onclick="app.stopService('${service}')">Stop</span> <span onclick="">Open</span></li>`)
+          if (service === openService) {
+            setTimeout(() => {
+              openForm(service)
+            }, 1000)
+          }
         })
         $services.innerHTML = output
       }
@@ -289,14 +304,22 @@
     .formStatus {
       display: inline-block;
       padding: 0.25em 0.5em;
-      color: #fff;
-      background-color: #000;
+      color: #000;
+      background-color: #fff;
+      border: solid 1px #000;
       font-size: 12px;
       text-transform: uppercase;
       cursor: default;
+      min-width: 5rem;
+      text-align: center;
+    }
+    .formStatus--starting {
+      background-color: #ffbf47;
     }
     .formStatus--running {
       background-color: #006435;
+      border-color: #006435;
+      color: #fff;
     }
     </style>
   </body>

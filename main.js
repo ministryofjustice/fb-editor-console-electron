@@ -1,9 +1,9 @@
-const { exec, execSync, spawnSync } = require('child_process')
+const {exec, execSync, spawnSync} = require('child_process')
 const path = require('path')
 const pathExists = require('path-exists')
 const rimraf = require('rimraf')
 const ospath = require('ospath')
-const npm = require("npm")
+const npm = require('npm')
 const hostile = require('hostile')
 const notifier = require('node-notifier')
 const glob = require('glob')
@@ -18,9 +18,8 @@ const ipc = require('electron-better-ipc')
 const Store = require('electron-store')
 const store = new Store()
 
-const { lstatSync, readdirSync } = fs
+const {lstatSync, readdirSync} = fs
 const isDirectory = source => lstatSync(source).isDirectory()
-
 
 let firstInstall = false
 
@@ -47,30 +46,29 @@ const createNotificationWindow = async () => {
     frame: false,
     toolbar: false,
     width: 400,
-    height: firstInstall ? 200: 134
+    height: firstInstall ? 200 : 134
   })
   notificationWindow.on('blur', () => {
-    notificationWindow.focus()
+    // notificationWindow.focus()
   })
   notificationWindow.loadFile('notification.html')
   notificationWindow.hide()
   app.windows.notificationWindow = notificationWindow
 }
 
-const displayNotification = async (message, options={}) => {
+const displayNotification = async (message, options = {}) => {
   const params = typeof message === 'object' ? message : Object.assign(options, {message})
   const notificationWindow = app.windows.notificationWindow
   // try {
-    await ipc.callRenderer(notificationWindow, 'send-notification', params)
+  await ipc.callRenderer(notificationWindow, 'send-notification', params)
   // } catch (e) {
   //   //
   // }
   // try {
-    // await ipc.callRenderer(notificationWindow, 'send-notification', {message:'gosh', dismiss: true})
+  // await ipc.callRenderer(notificationWindow, 'send-notification', {message:'gosh', dismiss: true})
   // } catch(e) {}
-  
-  console.log('displayNotification', {message})
 
+  console.log('displayNotification', {message})
 }
 app.notify = displayNotification
 app.dismissNotification = () => {
@@ -82,10 +80,15 @@ const getDirectories = source =>
 
 const services = {}
 
-// ipc.answerRenderer('setService', async params => {
-//   services[params[name]] = params
-//   console.log('setService', JSON.stringify(params, null, 2))
-// })
+ipc.answerRenderer('setService', async params => {
+  console.log('Called set service')
+  return 'bum'
+  // services[params[name]] = params
+  // console.log('setService', JSON.stringify(params, null, 2))
+})
+ipc.answerRenderer('getServices', async () => {
+  return services
+})
 
 const runInstallation = async (name) => {
   try {
@@ -93,7 +96,6 @@ const runInstallation = async (name) => {
   } catch (e) {
     console.log(`Installation: ${name} failed`)
   }
-
 }
 app.updateEditor = async () => {
   await runInstallation('updateEditor')
@@ -106,11 +108,11 @@ app.installEditor = async () => {
 }
 
 const launchApp = () => {
-
   app.store = store
   app.services = services
-  app.getServices = () => services
-  app.setService = (name, params={}) => services[name] = params
+  app.setService = (name, params = {}) => {
+    services[name] = params
+  }
   // app.addService = addService
   // app.createService = createService
 
@@ -123,28 +125,27 @@ const launchApp = () => {
     mainWindow.maximize()
     mainWindow.loadFile('index.html')
     mainWindow.show()
-    // mainWindow.webContents.openDevTools()
+    mainWindow.webContents.openDevTools()
 
-    var template = [{
-      label: "Application",
+    let template = [{
+      label: 'Application',
       submenu: [
-          { label: "About Application", selector: "orderFrontStandardAboutPanel:" },
-          { type: "separator" },
-          { label: "Quit", accelerator: "Command+Q", click: function() { app.quit() }}
+        {label: 'About Application', selector: 'orderFrontStandardAboutPanel:'},
+        {type: 'separator'},
+        {label: 'Quit', accelerator: 'Command+Q', click: function () { app.quit() }}
       ]}, {
-      label: "Edit",
+      label: 'Edit',
       submenu: [
-          { label: "Undo", accelerator: "CmdOrCtrl+Z", selector: "undo:" },
-          { label: "Redo", accelerator: "Shift+CmdOrCtrl+Z", selector: "redo:" },
-          { type: "separator" },
-          { label: "Cut", accelerator: "CmdOrCtrl+X", selector: "cut:" },
-          { label: "Copy", accelerator: "CmdOrCtrl+C", selector: "copy:" },
-          { label: "Paste", accelerator: "CmdOrCtrl+V", selector: "paste:" },
-          { label: "Select All", accelerator: "CmdOrCtrl+A", selector: "selectAll:" }
-      ]}
-  ];
+        {label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:'},
+        {label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:'},
+        {type: 'separator'},
+        {label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:'},
+        {label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:'},
+        {label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:'},
+        {label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:'}
+      ]}]
 
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 
     mainWindow.on('closed', function () {
       mainWindow = null
@@ -168,14 +169,14 @@ const launchApp = () => {
     }
   })
 
-  // 49152–65535 (215 + 214 to 216 − 1) 
+  // 49152–65535 (215 + 214 to 216 − 1)
   let portCounter = 52000
   app.launchService = async (service) => {
     const serviceDetails = services[service]
+    serviceDetails.status = 'starting'
     if (!serviceDetails.port) {
       serviceDetails.port = portCounter++
       serviceDetails.path = `${app.paths.services}/${service}`
-      serviceDetails.running = false
     }
     app.clearPort(serviceDetails.port)
     process.env.SERVICEPORT = serviceDetails.port
@@ -186,10 +187,25 @@ const launchApp = () => {
       runServiceWindow = null
     })
     serviceDetails.window = runServiceWindow
+    const checkService = () => {
+      setTimeout(() => {
+        request.get(`http://localhost:${serviceDetails.port}`)
+          .then((res) => {
+            const mainWindow = app.windows.mainWindow
+            serviceDetails.status = 'running'
+            mainWindow.webContents.executeJavaScript(`listServices('${service}')`)
+          })
+          .catch(() => {
+            checkService()
+          })
+      }, 500)
+    }
+    checkService()
   }
 
   app.stopService = async (service) => {
     const serviceDetails = services[service]
+    serviceDetails.status = 'stopped'
     if (serviceDetails.window) {
       serviceDetails.window.close()
       delete serviceDetails.window
@@ -252,19 +268,17 @@ const fbServicesPath = path.join(fbPath, 'forms')
 app.paths.services = fbServicesPath
 execSync(`mkdir -p ${fbServicesPath}`)
 
+const consoleLogPath = path.join(app.paths.logs, 'fb.console.log')
+try {
+  fs.unlinkSync(consoleLogPath)
+} catch (e) {
+  //
+}
+const consoleLog = fs.createWriteStream(consoleLogPath, {flags: 'a'})
 
-  const consoleLogPath = path.join(app.paths.logs, `fb.console.log`)
-  try {
-    fs.unlinkSync(consoleLogPath)
-  } catch (e) {
-    //
-  }
-  const consoleLog = fs.createWriteStream(consoleLogPath, {flags: 'a'})
-
-  // redirect stdout / stderr
-  process.__defineGetter__('stdout', () => { return consoleLog })
-  process.__defineGetter__('stderr', () => { return consoleLog })
-
+// redirect stdout / stderr
+process.__defineGetter__('stdout', () => { return consoleLog })
+process.__defineGetter__('stderr', () => { return consoleLog })
 
 let existingServices = getDirectories(app.paths.services)
 
@@ -303,12 +317,11 @@ app.on('ready', () => {
   runApp()
 })
 
-
 const timeout = (ms) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 const sleep = async (t = 3000) => {
   console.log('sleeping...')
-  await timeout(t);
+  await timeout(t)
   console.log('waking up...')
 }

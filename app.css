@@ -16,3 +16,15 @@ html.govuk-template {
 .govuk-table__row {
   cursor: pointer;
 }
+
+.js-hidden {
+  display: none;
+}
+
+.govuk-error-message {
+  display: none;
+}
+
+.govuk-form-group--error .govuk-error-message {
+  display: block;
+}
