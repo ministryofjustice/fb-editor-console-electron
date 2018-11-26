@@ -1,7 +1,7 @@
 {
   "name": "fb-editor-console-electron",
   "productName": "Form Builder Console",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Form Builder Console",
   "main": "main.js",
   "scripts": {
