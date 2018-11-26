@@ -49,7 +49,7 @@ const createNotificationWindow = async () => {
     height: firstInstall ? 200 : 134
   })
   notificationWindow.on('blur', () => {
-    // notificationWindow.focus()
+    notificationWindow.focus()
   })
   notificationWindow.loadFile('notification.html')
   notificationWindow.hide()
@@ -82,7 +82,6 @@ const services = {}
 
 ipc.answerRenderer('setService', async params => {
   console.log('Called set service')
-  return 'bum'
   // services[params[name]] = params
   // console.log('setService', JSON.stringify(params, null, 2))
 })
@@ -125,7 +124,7 @@ const launchApp = () => {
     mainWindow.maximize()
     mainWindow.loadFile('index.html')
     mainWindow.show()
-    mainWindow.webContents.openDevTools()
+    // mainWindow.webContents.openDevTools()
 
     let template = [{
       label: 'Application',
