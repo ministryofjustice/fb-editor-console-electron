@@ -140,8 +140,8 @@
       const $services = document.getElementById('services')
       const $servicesInstructions = document.getElementById('servicesInstructions')
 
-      const git = app.store.get('git') || {}
-      if (git.name) {
+      const gitSettings = app.store.get('git') || {}
+      if (gitSettings.name) {
         const $formsInstructions = document.getElementById('formsInstructions')
         hideElement($formsInstructions)
       } else {
@@ -233,6 +233,7 @@
         let output = ''
         serviceList.forEach(service => {
           const serviceStatus = services[service].status || 'stopped'
+          // await ipc.callMain('getServiceStatus', service)
           const running = serviceStatus === 'running'
           const status = strings.status[serviceStatus]
           output += `

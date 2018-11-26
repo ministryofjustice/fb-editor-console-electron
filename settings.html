@@ -198,16 +198,16 @@
     <script>
       const {app} = require('./app.js')
 
-      const git = app.store.get('git') || {}
-      const gitSettings = ['name', 'email', 'user', 'token']
-      gitSettings.forEach(setting => {
+      const gitSettings = app.store.get('git') || {}
+      const gitProperties = ['name', 'email', 'user', 'token']
+      gitProperties.forEach(setting => {
         const $setting = document.getElementById(setting)
-        $setting.value = git[setting] || ''
+        $setting.value = gitSettings[setting] || ''
       })
       const $saveGit = document.getElementById('saveGit')
       $saveGit.addEventListener('click', () => {
         const git = {}
-        gitSettings.forEach(setting => {
+        gitProperties.forEach(setting => {
           const $setting = document.getElementById(setting)
           git[setting] = $setting.value || ''
         })

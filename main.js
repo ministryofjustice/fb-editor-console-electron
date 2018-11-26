@@ -88,6 +88,14 @@ ipc.answerRenderer('setService', async params => {
 ipc.answerRenderer('getServices', async () => {
   return services
 })
+// ipc.answerRenderer('getServices', async () => {
+//   return services
+// })
+ipc.answerRenderer('getServiceStatus', async (service) => {
+  return 'running'
+  // const serviceData = services[service] || {}
+  // return serviceData.status || 'stopped'
+})
 
 const runInstallation = async (name) => {
   try {
@@ -106,12 +114,16 @@ app.installEditor = async () => {
   await runInstallation('installEditor')
 }
 
+app.store = store
+app.services = services
+app.setService = (name, params = {}) => {
+  services[name] = params
+}
+app.updateService = (name, params = {}) => {
+  services[name] = Object.assign(services[name], params)
+}
+
 const launchApp = () => {
-  app.store = store
-  app.services = services
-  app.setService = (name, params = {}) => {
-    services[name] = params
-  }
   // app.addService = addService
   // app.createService = createService
 
@@ -168,13 +180,24 @@ const launchApp = () => {
     }
   })
 
-  // 49152–65535 (215 + 214 to 216 − 1)
-  let portCounter = 52000
   app.launchService = async (service) => {
     const serviceDetails = services[service]
     serviceDetails.status = 'starting'
     if (!serviceDetails.port) {
-      serviceDetails.port = portCounter++
+      const portSettings = app.store.get('ports') || {}
+      serviceDetails.port = portSettings[service]
+      const usedPorts = Object.keys(portSettings).map(service => portSettings[service])
+
+      // 49152–65535 (215 + 214 to 216 − 1)
+      let portCounter = 52000
+      while (!serviceDetails.port) {
+        const checkPort = portCounter++
+        if (!usedPorts.includes(checkPort)) {
+          serviceDetails.port = checkPort
+          portSettings[service] = checkPort
+          app.store.set('ports', portSettings)
+        }
+      }
       serviceDetails.path = `${app.paths.services}/${service}`
     }
     app.clearPort(serviceDetails.port)
@@ -230,6 +253,9 @@ const launchApp = () => {
     await app.stopService(serviceName)
     const deleteServicePath = path.join(app.paths.services, serviceName)
     rimraf.sync(deleteServicePath)
+    const portSettings = app.store.get('ports')
+    delete portSettings[serviceName]
+    app.store.set('ports', portSettings)
     delete services[serviceName]
   }
 
