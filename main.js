@@ -3,6 +3,7 @@ const path = require('path')
 const pathExists = require('path-exists')
 const rimraf = require('rimraf')
 const ospath = require('ospath')
+const findProcess = require('find-process')
 const npm = require('npm')
 const hostile = require('hostile')
 const notifier = require('node-notifier')
@@ -85,17 +86,20 @@ ipc.answerRenderer('setService', async params => {
   // services[params[name]] = params
   // console.log('setService', JSON.stringify(params, null, 2))
 })
+ipc.answerRenderer('setServiceProperty', async params => {
+  const {service, property, value} = params
+  services[service] = services[service] || {}
+  services[service][property] = value
+})
 ipc.answerRenderer('getServices', async () => {
   return services
 })
-// ipc.answerRenderer('getServices', async () => {
-//   return services
+
+// ipc.answerRenderer('getServiceStatus', async (service) => {
+//   return 'running'
+//   // const serviceData = services[service] || {}
+//   // return serviceData.status || 'stopped'
 // })
-ipc.answerRenderer('getServiceStatus', async (service) => {
-  return 'running'
-  // const serviceData = services[service] || {}
-  // return serviceData.status || 'stopped'
-})
 
 const runInstallation = async (name) => {
   try {
@@ -182,6 +186,9 @@ const launchApp = () => {
 
   app.launchService = async (service) => {
     const serviceDetails = services[service]
+    if (serviceDetails.status === 'starting') {
+      return
+    }
     serviceDetails.status = 'starting'
     if (!serviceDetails.port) {
       const portSettings = app.store.get('ports') || {}
@@ -200,13 +207,15 @@ const launchApp = () => {
       }
       serviceDetails.path = `${app.paths.services}/${service}`
     }
-    app.clearPort(serviceDetails.port)
+    await app.clearPort(serviceDetails.port)
+    process.env.SERVICENAME = service
     process.env.SERVICEPORT = serviceDetails.port
     process.env.SERVICEDATA = serviceDetails.path
     let runServiceWindow = new BrowserWindow({show: false})
     runServiceWindow.loadFile('run-service.html')
-    runServiceWindow.on('closed', function () {
+    runServiceWindow.on('closed', async () => {
       runServiceWindow = null
+      await app.clearPort(serviceDetails.port)
     })
     serviceDetails.window = runServiceWindow
     const checkService = () => {
@@ -220,7 +229,7 @@ const launchApp = () => {
           .catch(() => {
             checkService()
           })
-      }, 500)
+      }, 250)
     }
     checkService()
   }
@@ -228,19 +237,33 @@ const launchApp = () => {
   app.stopService = async (service) => {
     const serviceDetails = services[service]
     serviceDetails.status = 'stopped'
+
+    // app.clearPort(serviceDetails.port)
+
     if (serviceDetails.window) {
       serviceDetails.window.close()
       delete serviceDetails.window
     }
   }
 
-  app.clearPort = (PORT) => {
+  app.checkPort = async (PORT) => {
+    // findProcess('port', 52000).then(list
+    // [0]{pid, ppid, uid, gid, name, cmd}  cmd === 'node bin/start.js'
+    let portPid
     try {
       const portPidProcess = execSync(`lsof -i :${PORT} | grep LISTEN`).toString()
-      const portPid = portPidProcess.replace(/node\s+(\d+)\s.*/, '$1')
-      execSync(`kill -s 9 ${portPid}`)
+      portPid = portPidProcess.replace(/node\s+(\d+)\s.*/, '$1')
     } catch (e) {
       // ignore errors
+    }
+    return portPid
+  }
+
+  app.clearPort = async (PORT) => {
+    const portPid = await app.checkPort(PORT)
+    if (portPid) {
+      // process.kill(portPid)
+      execSync(`kill -s 9 ${portPid}`)
     }
   }
 

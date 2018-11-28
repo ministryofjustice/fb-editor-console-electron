@@ -1,5 +1,6 @@
-const { exec } = require('child_process')
+const {exec} = require('child_process')
 const {app} = require('./app.js')
+const ipc = require('electron-better-ipc')
 
 const {SERVICEDATA, SERVICEPORT} = process.env
 const {nvs, editor, logs} = app.paths
@@ -11,5 +12,12 @@ const child = exec(`. ${nvs}/nvs.sh && nvs use 10.11 && cd ${editor} && PORT=${S
   }
 })
 console.log('pid', child.pid, 'port', SERVICEPORT, 'SERVICEDATA', SERVICEDATA)
+// app.services['fb-ioj'].pid = child.pid
+
+ipc.callMain('setServiceProperty', {
+  service: 'fb-ioj',
+  property: 'pid',
+  value: child.pid
+})
 
 module.exports = {}

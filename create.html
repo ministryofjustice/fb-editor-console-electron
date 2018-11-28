@@ -201,7 +201,7 @@
         const files = glob.sync(`${dir}/**/*`, {dot:true})
           .filter(file => !isDirectory(file))
           .filter(file => !file.includes('.git/'))
-         app.notify('About to addFIle')
+         app.notify(`About to add ${filepath}`)
         const addFile = async (filepath) => {
           filepath = filepath.replace(dir + '/', '')
           try {
