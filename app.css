@@ -81,6 +81,7 @@ html.govuk-template {
 .fb-navigation ul {
   margin: 0;
   padding: 0;
+  display: flex;
 }
 .fb-navigation li {
   list-style-type: none;

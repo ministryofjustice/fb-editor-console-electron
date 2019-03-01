@@ -14,6 +14,9 @@ const fs = require('fs')
 const git = require('isomorphic-git')
 git.plugins.set('fs', fs)
 
+const logger = require('electron-timber')
+const mainLogger = logger.create({name: 'MainBrain'})
+mainLogger.log('Main Logger working')
 const ipc = require('electron-better-ipc')
 
 const Store = require('electron-store')
@@ -69,7 +72,7 @@ const displayNotification = async (message, options = {}) => {
   // await ipc.callRenderer(notificationWindow, 'send-notification', {message:'gosh', dismiss: true})
   // } catch(e) {}
 
-  console.log('displayNotification', {message})
+  mainLogger.log('displayNotification', {message})
 }
 app.notify = displayNotification
 app.dismissNotification = () => {
@@ -82,7 +85,7 @@ const getDirectories = source =>
 const services = {}
 
 ipc.answerRenderer('setService', async params => {
-  console.log('Called set service')
+  mainLogger.log('Called set service')
   // services[params[name]] = params
   // console.log('setService', JSON.stringify(params, null, 2))
 })
@@ -105,7 +108,7 @@ const runInstallation = async (name) => {
   try {
     await ipc.callRenderer(app.windows.installation, name)
   } catch (e) {
-    console.log(`Installation: ${name} failed`)
+    mainLogger.log(`Installation: ${name} failed`)
   }
 }
 app.updateEditor = async () => {
@@ -167,6 +170,14 @@ const launchApp = () => {
     })
   }
 
+  app.on('quit', function () {
+    mainLogger.log('Form Builder Console quitting')
+    Object.keys(services).forEach(service => {
+      mainLogger.log(`Making sure ${service} is stopped`)
+      app.stopService(service)
+    })
+  })
+
   // Quit when all windows are closed.
   app.on('window-all-closed', function () {
     // On OS X it is common for applications and their menu bar
@@ -200,13 +211,17 @@ const launchApp = () => {
       while (!serviceDetails.port) {
         const checkPort = portCounter++
         if (!usedPorts.includes(checkPort)) {
-          serviceDetails.port = checkPort
-          portSettings[service] = checkPort
-          app.store.set('ports', portSettings)
+          const portProcess = await app.checkPort(checkPort)
+          if (!portProcess.alreadyInUse) {
+            serviceDetails.port = checkPort
+            portSettings[service] = checkPort
+            app.store.set('ports', portSettings)
+          }
         }
       }
       serviceDetails.path = `${app.paths.services}/${service}`
     }
+    mainLogger.log(`launch ${service} on ${serviceDetails.port}`)
     await app.clearPort(serviceDetails.port)
     process.env.SERVICENAME = service
     process.env.SERVICEPORT = serviceDetails.port
@@ -238,32 +253,44 @@ const launchApp = () => {
     const serviceDetails = services[service]
     serviceDetails.status = 'stopped'
 
-    // app.clearPort(serviceDetails.port)
+    app.clearPort(serviceDetails.port)
 
     if (serviceDetails.window) {
-      serviceDetails.window.close()
-      delete serviceDetails.window
+      try {
+        serviceDetails.window.close()
+        delete serviceDetails.window
+      } catch (e) {
+        //
+      }
     }
   }
 
   app.checkPort = async (PORT) => {
-    // findProcess('port', 52000).then(list
-    // [0]{pid, ppid, uid, gid, name, cmd}  cmd === 'node bin/start.js'
-    let portPid
-    try {
-      const portPidProcess = execSync(`lsof -i :${PORT} | grep LISTEN`).toString()
-      portPid = portPidProcess.replace(/node\s+(\d+)\s.*/, '$1')
-    } catch (e) {
-      // ignore errors
-    }
-    return portPid
+    return findProcess('port', PORT)
+      .then(list => {
+        const portProcess = list[0]
+        if (portProcess) {
+          if (portProcess.cmd !== 'node bin/start.js') {
+            portProcess.alreadyInUse = true
+          }
+        }
+        return portProcess || {}
+      })
+      .catch(e => {
+        //
+      })
   }
 
   app.clearPort = async (PORT) => {
-    const portPid = await app.checkPort(PORT)
-    if (portPid) {
-      // process.kill(portPid)
-      execSync(`kill -s 9 ${portPid}`)
+    const portProcess = await app.checkPort(PORT)
+    const {pid} = portProcess
+    if (pid) {
+      // process.kill(pid)
+      try {
+        execSync(`kill -s 9 ${pid}`)
+      } catch (e) {
+        //
+      }
     }
   }
 

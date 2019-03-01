@@ -61,7 +61,7 @@
 <ul>
 <li class="govuk-link"><a href="index.html">Forms</a></li>
 <li class="govuk-link"><a href="add.html">Add existing form</a></li>
-<li class="govuk-link "><a href="create.html">Create new form</a></li>
+<li class="govuk-link "><a href="create.html">Create form</a></li>
 </ul>
 </nav>
 </header>
@@ -197,6 +197,10 @@
 <script src="assets/govuk-frontend-design-system.min.js"></script>
     <script>
       const {app} = require('./app.js')
+      const logger = require('electron-timber')
+      const settingsLogger = logger.create({name: 'settings', custom: 'settings'})
+      // const github = require('github-api')
+
 
       const gitSettings = app.store.get('git') || {}
       const gitProperties = ['name', 'email', 'user', 'token']
@@ -204,6 +208,26 @@
         const $setting = document.getElementById(setting)
         $setting.value = gitSettings[setting] || ''
       })
+
+     // document.body.innerHTML += '<pre>' + JSON.stringify(gitSettings) + '</pre>'
+    logger.log('Strewth a loothy')
+     settingsLogger.log(JSON.stringify({gitSettings}, null, 2))
+
+      /*const gh = new github({
+        username: gitSettings.user,
+        password: gitSettings.token
+      })
+      const gh = new github({
+        username: 'solidgoldpig',
+        token: 'e26e4dac4f99ab07f7e474f2695653615f50d38d'
+      })
+      
+      const user = gh.getUser()
+
+      user.listOrgs(orgs => {
+        document.body.innerHTML += '<h1>' + orgs + '</h1>'
+      })*/
+
       const $saveGit = document.getElementById('saveGit')
       $saveGit.addEventListener('click', () => {
         const git = {}

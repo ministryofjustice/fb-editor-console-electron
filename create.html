@@ -2,7 +2,7 @@
 <html lang="en" class="govuk-template ">
   <head>
     <meta charset="utf-8" />
-    <title>Form Builder - Create new form</title>
+    <title>Form Builder - Create form</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0b0c0c" /> 
 
@@ -61,7 +61,7 @@
 <ul>
 <li class="govuk-link"><a href="index.html">Forms</a></li>
 <li class="govuk-link"><a href="add.html">Add existing form</a></li>
-<li class="govuk-link fb-navigation-current"><a href="create.html">Create new form</a></li>
+<li class="govuk-link fb-navigation-current"><a href="create.html">Create form</a></li>
 </ul>
 </nav>
 </header>
@@ -85,7 +85,7 @@
 
 <div class="govuk-grid-column-two-thirds">
 
-<h1 class="govuk-heading-xl">Create new form</h1>
+<h1 class="govuk-heading-xl">Create form</h1>
 
 <div class="govuk-error-summary js-hidden" aria-labelledby="error-summary-title" role="alert" tabindex="-1" data-module="error-summary">
   <h2 class="govuk-error-summary__title" id="error-summary-title">
@@ -125,7 +125,7 @@
 
     
     <button type="submit" class="govuk-button" id="createForm">
-      Create
+      Create form
     </button>
     
 <!-- CONTENTS END -->
@@ -201,7 +201,7 @@
         const files = glob.sync(`${dir}/**/*`, {dot:true})
           .filter(file => !isDirectory(file))
           .filter(file => !file.includes('.git/'))
-         app.notify(`About to add ${filepath}`)
+         app.notify(`About to add ${dir}`)
         const addFile = async (filepath) => {
           filepath = filepath.replace(dir + '/', '')
           try {
