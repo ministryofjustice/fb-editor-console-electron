@@ -79,7 +79,7 @@ ipc.answerMain('reinstallEditor', async params => {
 
 ipc.answerMain('installEditor', async params => {
   await installDependencies()
-  app.notify('Finsihed installing editor', {dismiss: true})
+  app.notify('Finished installing editor', {dismiss: true})
 })
 
 module.exports = {}

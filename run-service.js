@@ -2,16 +2,19 @@ const {exec} = require('child_process')
 const {app} = require('./app.js')
 const ipc = require('electron-better-ipc')
 
-const {SERVICEDATA, SERVICEPORT} = process.env
+const logger = require('electron-timber')
+const runLogger = logger.create({name: 'RunService'})
+
+const {SERVICE_PATH, SERVICEPORT} = process.env
 const {nvs, editor, logs} = app.paths
 
-// const child = exec(`. ${nvsPath}/nvs.sh && nvs use latest && cd ${fbEditorPath} && PORT=${XPORT} SERVICEDATA=${SERVICEDATA} npm start`, (err, stdout, stderr) => {})
-const child = exec(`. ${nvs}/nvs.sh && nvs use 10.11 && cd ${editor} && PORT=${SERVICEPORT} SERVICEDATA='${SERVICEDATA}' LOGDIR='${logs}' npm start`, (err, stdout, stderr) => {
+runLogger.log(`. ${nvs}/nvs.sh && nvs use 10.11 && cd ${editor} && PORT=${SERVICEPORT} SERVICE_PATH='${SERVICE_PATH}' LOGDIR='${logs}' npm start`)
+const child = exec(`. ${nvs}/nvs.sh && nvs use 10.11 && cd ${editor} && PORT=${SERVICEPORT} SERVICE_PATH='${SERVICE_PATH}' LOGDIR='${logs}' npm start`, (err, stdout, stderr) => {
   if (err) {
-    console.log('background server failed', err)
+    runLogger.log('background server failed', err)
   }
 })
-console.log('pid', child.pid, 'port', SERVICEPORT, 'SERVICEDATA', SERVICEDATA)
+runLogger.log('pid', child.pid, 'port', SERVICEPORT, 'SERVICE_PATH', SERVICE_PATH)
 
 // ipc.callMain('setServiceProperty', {
 //   service: 'fb-ioj',

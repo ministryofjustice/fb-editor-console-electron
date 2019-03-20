@@ -225,7 +225,7 @@ const launchApp = () => {
     await app.clearPort(serviceDetails.port)
     process.env.SERVICENAME = service
     process.env.SERVICEPORT = serviceDetails.port
-    process.env.SERVICEDATA = serviceDetails.path
+    process.env.SERVICE_PATH = serviceDetails.path
     let runServiceWindow = new BrowserWindow({show: false})
     runServiceWindow.loadFile('run-service.html')
     runServiceWindow.on('closed', async () => {
@@ -233,6 +233,7 @@ const launchApp = () => {
       await app.clearPort(serviceDetails.port)
     })
     serviceDetails.window = runServiceWindow
+    mainLogger.log('about to check service')
     const checkService = () => {
       setTimeout(() => {
         request.get(`http://localhost:${serviceDetails.port}`)
