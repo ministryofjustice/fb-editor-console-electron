@@ -17,7 +17,7 @@ Alternatively:
 - double-click the zip file to expand the app
 - move the app (`Form Builder Console`) to the `Applications` directory
 
-[Download](https://github.com/ministryofjustice/fb-editor-console-electron/releases/download/v0.1.0/Form.Builder.Console.zip)
+[Download](https://github.com/ministryofjustice/fb-editor-console-electron/releases)
 
 ## Usage
 

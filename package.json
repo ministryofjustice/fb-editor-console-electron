@@ -16,7 +16,7 @@
   "license": "MIT",
   "devDependencies": {
     "@ministryofjustice/eslint-config-fb": "^1.0.4",
-    "electron": "^3.1.6",
+    "electron": "^4.1.0",
     "electron-packager": "^13.1.1"
   },
   "dependencies": {
