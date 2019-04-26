@@ -49,7 +49,7 @@ Read about the `Form Builder Editor` and `Form Builder Publisher`
 
 If you encounter a dialog window like this:
 
-![Running Console app blocked](images/installation-blocked.png =600x)
+![Running Console app blocked](images/installation-blocked.png)
 
 
 - Open `System Preferences` and navigate to the `Security and Privacy` preference pane.
