@@ -49,13 +49,13 @@ Read about the `Form Builder Editor` and `Form Builder Publisher`
 
 If you encounter a dialog window like this:
 
-![Running Console app blocked](images/installation-blocked.png)
+<img src="images/installation-blocked.png" alt="Running Console app blocked" width="300" style="max-width: 100%;">
 
 
 - Open `System Preferences` and navigate to the `Security and Privacy` preference pane.
 - Click on `Open Anyway` as shown below
 
-![Open anyway from Security Preference Pane](images/security-pref-pane--open-anyway.jpg)
+<img src="images/security-pref-pane--open-anyway.jpg" alt="Open anyway from Security Preference Pane" width="600" style="max-width: 100%;">
 
 *NB. The app is currently unsigned - awaiting an MoJ Apple Developer account to enable this*
 
