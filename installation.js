@@ -2,12 +2,23 @@ const {app} = require('./app.js')
 const {git} = app
 const {execSync} = require('child_process')
 const {pathExists, rimraf} = app.utils
+const logger = require('electron-timber')
+const mainLogger = logger.create({name: 'MainBrain'})
 
 const ipc = require('electron-better-ipc')
 
 const installEditorDependencies = (reinstall) => {
   app.notify(`${reinstall ? 'Reinstalling' : 'Installing'} editor dependencies`)
-  execSync(`. ${app.paths.nvs}/nvs.sh && nvs add 10.11 && nvs use 10.11 && cd ${app.paths.editor} && npm install`)
+  try {
+    mainLogger.log('Doing a log thing')
+    const sortIt = execSync(`. ${app.paths.nvs}/nvs.sh && nvs add 10.11`)
+    mainLogger.log('Doing a log thing part deux')
+    const sortIt2 = execSync(`. ${app.paths.nvs}/nvs.sh && nvs use 10.11 && cd ${app.paths.editor} && npm install`)
+    mainLogger.log('Installed everything')
+  } catch (e) {
+    mainLogger.log('execSync failed')
+    mainLogger.log(e)
+  }
 }
 const cloneEditor = async () => {
   if (pathExists.sync(app.paths.editor)) {
@@ -20,6 +31,7 @@ const cloneEditor = async () => {
     singleBranch: true,
     depth: 1
   })
+  mainLogger.log('Cloned editor')
   installEditorDependencies()
   app.notify('Installed editor')
 }
@@ -60,12 +72,15 @@ const reinstallEditor = async () => {
   rimraf.sync(app.paths.nvs)
   app.notify('Deleting editor')
   rimraf.sync(app.paths.editor)
+  mainLogger.log('installing dependencies')
   await installDependencies()
   app.notify('Reinstalled editor', {dismiss: true})
 }
 
 const installDependencies = async () => {
+  mainLogger.log('Installing NVS')
   await installNVS()
+  mainLogger.log('Clonoong editor')
   await cloneEditor()
 }
 
