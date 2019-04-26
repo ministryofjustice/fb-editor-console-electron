@@ -2,6 +2,8 @@
 
 ## Form Builder Console
 
+![Console app](images/console.png)
+
 Desktop application that allows users to run `Form Builder Editor` locally.
 
 **NB. Currently Mac OS X only**
