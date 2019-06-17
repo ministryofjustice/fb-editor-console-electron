@@ -14,7 +14,7 @@ git.plugins.set('fs', fs)
 const logger = require('electron-timber')
 const mainLogger = logger.create({name: 'MainBrain'})
 mainLogger.log('Main Logger working')
-const ipc = require('electron-better-ipc')
+const {ipcMain} = require('electron-better-ipc')
 
 const Store = require('electron-store')
 const store = new Store()
@@ -61,12 +61,12 @@ const displayNotification = async (message, options = {}) => {
   const params = typeof message === 'object' ? message : Object.assign(options, {message})
   const notificationWindow = app.windows.notificationWindow
   // try {
-  await ipc.callRenderer(notificationWindow, 'send-notification', params)
+  await ipcMain.callRenderer(notificationWindow, 'send-notification', params)
   // } catch (e) {
   //   //
   // }
   // try {
-  // await ipc.callRenderer(notificationWindow, 'send-notification', {message:'gosh', dismiss: true})
+  // await ipcMain.callRenderer(notificationWindow, 'send-notification', {message:'gosh', dismiss: true})
   // } catch(e) {}
 
   mainLogger.log('displayNotification', {message})
@@ -81,21 +81,21 @@ const getDirectories = source =>
 
 const services = {}
 
-ipc.answerRenderer('setService', async params => {
+ipcMain.answerRenderer('setService', async params => {
   mainLogger.log('Called set service')
   // services[params[name]] = params
   // console.log('setService', JSON.stringify(params, null, 2))
 })
-ipc.answerRenderer('setServiceProperty', async params => {
+ipcMain.answerRenderer('setServiceProperty', async params => {
   const {service, property, value} = params
   services[service] = services[service] || {}
   services[service][property] = value
 })
-ipc.answerRenderer('getServices', async () => {
+ipcMain.answerRenderer('getServices', async () => {
   return services
 })
 
-// ipc.answerRenderer('getServiceStatus', async (service) => {
+// ipcMain.answerRenderer('getServiceStatus', async (service) => {
 //   return 'running'
 //   // const serviceData = services[service] || {}
 //   // return serviceData.status || 'stopped'
@@ -103,7 +103,7 @@ ipc.answerRenderer('getServices', async () => {
 
 const runInstallation = async (name) => {
   try {
-    await ipc.callRenderer(app.windows.installation, name)
+    await ipcMain.callRenderer(app.windows.installation, name)
   } catch (e) {
     mainLogger.log(`Installation: ${name} failed`)
   }
@@ -135,7 +135,12 @@ const launchApp = () => {
     if (mainWindow) {
       return
     }
-    mainWindow = new BrowserWindow({show: false})
+    mainWindow = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        nodeIntegration: true
+      }
+    })
     app.windows.mainWindow = mainWindow
     mainWindow.maximize()
     mainWindow.loadFile('index.html')
@@ -223,7 +228,12 @@ const launchApp = () => {
     process.env.SERVICENAME = service
     process.env.SERVICEPORT = serviceDetails.port
     process.env.SERVICE_PATH = serviceDetails.path
-    let runServiceWindow = new BrowserWindow({show: false})
+    let runServiceWindow = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        nodeIntegration: true
+      }
+    })
     runServiceWindow.loadFile('run-service.html')
     runServiceWindow.on('closed', async () => {
       runServiceWindow = null
@@ -369,7 +379,12 @@ const runApp = async () => {
   firstInstall = !(pathExists.sync(nvsPath) && pathExists.sync(fbEditorPath))
   await createNotificationWindow()
 
-  let installationWindow = new BrowserWindow({show: false})
+  let installationWindow = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  })
   installationWindow.loadFile('installation.html')
   app.windows.installation = installationWindow
 

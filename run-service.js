@@ -1,6 +1,5 @@
 const {exec} = require('child_process')
 const {app} = require('./app.js')
-const ipc = require('electron-better-ipc')
 
 const logger = require('electron-timber')
 const runLogger = logger.create({name: 'RunService'})
@@ -15,11 +14,5 @@ const child = exec(`. ${nvs}/nvs.sh && nvs use 10.11 && cd ${editor} && PORT=${S
   }
 })
 runLogger.log('pid', child.pid, 'port', SERVICEPORT, 'SERVICE_PATH', SERVICE_PATH)
-
-// ipc.callMain('setServiceProperty', {
-//   service: 'fb-ioj',
-//   property: 'pid',
-//   value: child.pid
-// })
 
 module.exports = {}
