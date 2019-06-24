@@ -1,6 +1,6 @@
 const {app} = require('./app.js')
 
-const ipc = require('electron-better-ipc')
+const {ipcRenderer} = require('electron-better-ipc')
 
 const removeHeader = () => {
   document.querySelector('.pane').className += ' pane--short'
@@ -25,7 +25,7 @@ const dismissNotification = (delay = 2000) => {
   }
 }
 
-ipc.answerMain('send-notification', async params => {
+ipcRenderer.answerMain('send-notification', async params => {
   if (typeof params === 'string') {
     params = {
       message: params

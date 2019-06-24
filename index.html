@@ -130,7 +130,7 @@
 <script src="assets/govuk-frontend-design-system.min.js"></script>
     <script>
       const {app} = require('./app.js')
-      const ipc = require('electron-better-ipc')
+      const {ipcRenderer} = require('electron-better-ipc')
 
       const hideElement = ($el) => {
         $el.style = 'display:none'
@@ -221,7 +221,7 @@
       }
       const listServices = async (openService) => {
         // alert('damn')
-        let services = await ipc.callMain('getServices')
+        let services = await ipcRenderer.callMain('getServices')
         const serviceList = Object.keys(services)
         // alert(JSON.stringify(services))
         // alert(Object.keys(app.getServices()))
@@ -233,7 +233,7 @@
         let output = ''
         serviceList.forEach(service => {
           const serviceStatus = services[service].status || 'stopped'
-          // await ipc.callMain('getServiceStatus', service)
+          // await ipcRenderer.callMain('getServiceStatus', service)
           const running = serviceStatus === 'running'
           const status = strings.status[serviceStatus]
           output += `

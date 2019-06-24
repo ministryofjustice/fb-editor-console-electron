@@ -5,7 +5,7 @@ const {pathExists, rimraf} = app.utils
 const logger = require('electron-timber')
 const mainLogger = logger.create({name: 'MainBrain'})
 
-const ipc = require('electron-better-ipc')
+const {ipcRenderer} = require('electron-better-ipc')
 
 const installEditorDependencies = (reinstall) => {
   app.notify(`${reinstall ? 'Reinstalling' : 'Installing'} editor dependencies`)
@@ -84,15 +84,15 @@ const installDependencies = async () => {
   await cloneEditor()
 }
 
-ipc.answerMain('updateEditor', async params => {
+ipcRenderer.answerMain('updateEditor', async params => {
   await updateEditor()
 })
 
-ipc.answerMain('reinstallEditor', async params => {
+ipcRenderer.answerMain('reinstallEditor', async params => {
   await reinstallEditor()
 })
 
-ipc.answerMain('installEditor', async params => {
+ipcRenderer.answerMain('installEditor', async params => {
   await installDependencies()
   app.notify('Finished installing editor', {dismiss: true})
 })
