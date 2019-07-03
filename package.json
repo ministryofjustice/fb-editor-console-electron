@@ -1,7 +1,7 @@
 {
   "name": "fb-editor-console-electron",
   "productName": "Form Builder Console",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Form Builder Console",
   "main": "main.js",
   "scripts": {
@@ -16,13 +16,13 @@
   "license": "MIT",
   "devDependencies": {
     "@ministryofjustice/eslint-config-fb": "^1.0.7",
-    "electron": "^5.0.4",
-    "electron-packager": "^13.1.1"
+    "electron": "^5.0.6",
+    "electron-packager": "^14.0.1"
   },
   "dependencies": {
     "electron-better-ipc": "^0.3.0",
-    "electron-debug": "^3.0.0",
-    "electron-store": "^3.3.0",
+    "electron-debug": "^3.0.1",
+    "electron-store": "^4.0.0",
     "electron-timber": "^0.5.1",
     "find-process": "^1.4.2",
     "github-api": "^3.2.2",

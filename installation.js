@@ -10,10 +10,10 @@ const {ipcRenderer} = require('electron-better-ipc')
 const installEditorDependencies = (reinstall) => {
   app.notify(`${reinstall ? 'Reinstalling' : 'Installing'} editor dependencies`)
   try {
-    mainLogger.log('Doing a log thing')
-    const sortIt = execSync(`. ${app.paths.nvs}/nvs.sh && nvs add 10.11`)
-    mainLogger.log('Doing a log thing part deux')
-    const sortIt2 = execSync(`. ${app.paths.nvs}/nvs.sh && nvs use 10.11 && cd ${app.paths.editor} && npm install`)
+    mainLogger.log('Adding Node')
+    execSync(`. ${app.paths.nvs}/nvs.sh && nvs add 12.4.0`)
+    mainLogger.log('Using Node and npm installing')
+    execSync(`. ${app.paths.nvs}/nvs.sh && nvs use 12.4.0 && cd ${app.paths.editor} && npm install`)
     mainLogger.log('Installed everything')
   } catch (e) {
     mainLogger.log('execSync failed')
@@ -80,7 +80,7 @@ const reinstallEditor = async () => {
 const installDependencies = async () => {
   mainLogger.log('Installing NVS')
   await installNVS()
-  mainLogger.log('Clonoong editor')
+  mainLogger.log('Cloning editor')
   await cloneEditor()
 }
 
