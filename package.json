@@ -15,7 +15,7 @@
   "author": "alex.robinson@digital.justice.gov.uk",
   "license": "MIT",
   "devDependencies": {
-    "@ministryofjustice/eslint-config-fb": "^1.0.7",
+    "@ministryofjustice/eslint-config-fb": "^1.1.2",
     "electron": "^5.0.6",
     "electron-packager": "^14.0.1"
   },
