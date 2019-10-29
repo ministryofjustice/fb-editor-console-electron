@@ -35,7 +35,7 @@
     "shelljs": "^0.8.3"
   },
   "devDependencies": {
-    "@ministryofjustice/eslint-config-fb": "^1.1.2",
+    "@ministryofjustice/eslint-config-fb": "^1.1.4",
     "electron": "^7.0.0",
     "electron-packager": "^14.0.6"
   },
