@@ -116,14 +116,14 @@
     } = e
 
     /**
-       *  Expected structure
-       */
+     *  Expected structure
+     */
     if (error) {
       const {
         errors: [{
           /**
-                   *  Default if not conforming to expected structure
-                   */
+           *  Default if not conforming to expected structure
+           */
           message = 'No error message defined'
         } = {}] = []
       } = error
@@ -133,12 +133,12 @@
         : message
     } else {
       /**
-           *  Unexpected structure. Let's be defensive
-           */
+       *  Unexpected structure. Let's be defensive
+       */
       const {
         /**
-               *  Default if not an `HTTPError`
-               */
+         *  Default if not an `HTTPError`
+         */
         code = 'Unknown Error'
       } = e
 
@@ -154,8 +154,8 @@
       } else {
         const {
           /**
-                   *  Invalid structure, so default
-                   */
+           *  Invalid structure, so default
+           */
           message = 'No error message defined'
         } = e
 
