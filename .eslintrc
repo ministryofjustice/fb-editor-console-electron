@@ -1,3 +1,6 @@
 {
-  "extends": "@ministryofjustice/eslint-config-fb"
+  "extends": "@ministryofjustice/eslint-config-fb",
+  "plugins": [
+  	"html"
+  ]
 }
