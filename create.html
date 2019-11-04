@@ -108,58 +108,81 @@
   const {pathExists, isDirectory, glob, request} = app.utils
   const path = require('path')
 
+  function getErrorMessageForStatusCodeError ({
+    response: {
+      statusCode,
+      statusMessage = 'No error message defined'
+    } = {}
+  }, serviceName) {
+    let errorMessage
+
+    if (statusCode === 422) {
+      /**
+       *  Repository exists remotely
+       */
+      errorMessage = `${statusCode} ${statusMessage} ("${serviceName}" already exists)`
+    } else {
+      errorMessage = statusCode
+        ? `${statusCode} ${statusMessage} ("Settings" configuration error)`
+        : `${statusMessage} ("Settings" configuration error)`
+    }
+
+    return errorMessage
+  }
+
+  function getErrorForHTTPError ({
+    data: {
+      statusCode,
+      statusMessage = 'No error message defined'
+    } = {}
+  }) {
+    return statusCode
+      ? `${statusCode} ${statusMessage} ("Settings" configuration error)`
+      : `${statusMessage} ("Settings" configuration error)`
+  }
+
+  function getErrorMessageForNameExistsError ({
+    errors: [
+      {
+        message = 'No error message defined'
+      } = {}
+    ] = []
+  }, serviceName) {
+    return (message === 'name already exists on this account') // eslint-disable-line no-extra-parens
+      ? `"${serviceName}" already exists`
+      : `${message}`
+  }
+
   function createErrorMessage (e, serviceName) {
     let errorMessage
 
     const {
-      error
+      name = 'Unknown Error name'
     } = e
 
-    /**
-     *  Expected structure
-     */
-    if (error) {
-      const {
-        errors: [{
-          /**
-           *  Default if not conforming to expected structure
-           */
-          message = 'No error message defined'
-        } = {}] = []
-      } = error
-
-      errorMessage = (message === 'name already exists on this account') // eslint-disable-line no-extra-parens
-        ? `${serviceName} already exists on this account`
-        : message
+    if (name === 'StatusCodeError') {
+      errorMessage = getErrorMessageForStatusCodeError(e, serviceName)
     } else {
-      /**
-       *  Unexpected structure. Let's be defensive
-       */
       const {
-        /**
-         *  Default if not an `HTTPError`
-         */
-        code = 'Unknown Error'
+        code = 'Unknown Error code'
       } = e
 
       if (code === 'HTTPError') {
-        const {
-          data: {
-            statusCode,
-            statusMessage
-          } = {}
-        } = e
-
-        errorMessage = `${statusCode} ${statusMessage} ("Settings" configuration error)`
+        errorMessage = getErrorForHTTPError(e, serviceName)
       } else {
         const {
-          /**
-           *  Invalid structure, so default
-           */
-          message = 'No error message defined'
+          error
         } = e
 
-        errorMessage = `${code} ${message}`
+        if (error) {
+          errorMessage = getErrorMessageForNameExistsError(error, serviceName)
+        } else {
+          const {
+            message = 'No error message defined'
+          } = e
+
+          errorMessage = `${code} ${message}`
+        }
       }
     }
 
@@ -192,7 +215,10 @@
     serviceName = serviceName.replace(/\s/g, '-')
     const newServicePath = path.join(app.paths.services, serviceName)
 
-    if (pathExists.sync(newServicePath)) throw new Error(`${serviceName} already exists`)
+    /**
+     *  Repository exists locally
+     */
+    if (pathExists.sync(newServicePath)) throw new Error(`"${serviceName}" already exists`)
 
     app.notify(`Creating ${serviceName}`, {phase: 'Create form'})
 
@@ -269,6 +295,8 @@
         json
       })
     } catch (e) {
+      app.dismissNotification()
+
       throw new Error(createErrorMessage(e, serviceName))
     }
 
