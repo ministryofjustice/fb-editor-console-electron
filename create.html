@@ -148,7 +148,7 @@
       } = {}
     ] = []
   }, serviceName) {
-    return (message === 'name already exists on this account') // eslint-disable-line no-extra-parens
+    return message === 'name already exists on this account'
       ? `"${serviceName}" already exists`
       : `${message}`
   }
