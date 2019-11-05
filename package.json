@@ -1,12 +1,12 @@
 {
   "name": "fb-editor-console-electron",
-  "version": "0.5.1",
+  "version": "0.5.4",
   "description": "Form Builder Console",
   "main": "./main.js",
   "scripts": {
     "start": "electron .",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint": "eslint . --ext .js,.html",
+    "lint:fix": "npm run lint -- --fix"
   },
   "author": "Form Builder Team <form-builder-team@digital.justice.gov.uk>",
   "repository": "https://github.com/ministryofjustice/fb-editor-console-electron",
@@ -37,7 +37,8 @@
   "devDependencies": {
     "@ministryofjustice/eslint-config-fb": "^1.1.4",
     "electron": "^7.0.1",
-    "electron-packager": "^14.1.0"
+    "electron-packager": "^14.1.0",
+    "eslint-plugin-html": "^6.0.0"
   },
   "productName": "Form Builder Console"
 }
