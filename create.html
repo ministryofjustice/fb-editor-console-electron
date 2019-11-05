@@ -108,26 +108,24 @@
   const {pathExists, isDirectory, glob, request} = app.utils
   const path = require('path')
 
+  function getErrorMessage (statusCode, statusMessage) {
+    return statusCode
+        ? `"Settings" configuration error (${statusCode} ${statusMessage})`
+        : `"Settings" configuration error (${statusMessage})`
+  }
+
   function getErrorMessageForStatusCodeError ({
     response: {
       statusCode,
       statusMessage = 'No error message defined'
     } = {}
   }, serviceName) {
-    let errorMessage
-
-    if (statusCode === 422) {
+    return statusCode === 422
       /**
        *  Repository exists remotely
        */
-      errorMessage = `${statusCode} ${statusMessage} ("${serviceName}" already exists)`
-    } else {
-      errorMessage = statusCode
-        ? `${statusCode} ${statusMessage} ("Settings" configuration error)`
-        : `${statusMessage} ("Settings" configuration error)`
-    }
-
-    return errorMessage
+      ? `"${serviceName}" already exists (${statusCode} ${statusMessage})`
+      : getErrorMessage(statusCode, statusMessage)
   }
 
   function getErrorForHTTPError ({
@@ -136,9 +134,7 @@
       statusMessage = 'No error message defined'
     } = {}
   }) {
-    return statusCode
-      ? `${statusCode} ${statusMessage} ("Settings" configuration error)`
-      : `${statusMessage} ("Settings" configuration error)`
+    return getErrorMessage(statusCode, statusMessage)
   }
 
   function getErrorMessageForNameExistsError ({
@@ -150,7 +146,7 @@
   }, serviceName) {
     return message === 'name already exists on this account'
       ? `"${serviceName}" already exists`
-      : `${message}`
+      : message
   }
 
   function createErrorMessage (e, serviceName) {
