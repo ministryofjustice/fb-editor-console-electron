@@ -37,7 +37,7 @@
   "devDependencies": {
     "@ministryofjustice/eslint-config-fb": "^1.1.5",
     "electron": "^7.1.2",
-    "electron-packager": "^14.1.0",
+    "electron-packager": "^14.1.1",
     "eslint-plugin-html": "^6.0.0"
   },
   "productName": "Form Builder Console"
