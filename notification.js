@@ -1,4 +1,4 @@
-const {app} = require('./app.js')
+const {app} = require('./lib/app')
 
 const {ipcRenderer} = require('electron-better-ipc')
 

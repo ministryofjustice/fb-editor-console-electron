@@ -102,7 +102,7 @@
     <script src="assets/govuk-frontend-design-system.min.js"></script>
     <script>
   const {execSync} = require('child_process')
-  const {app} = require('./app.js')
+  const {app} = require('./lib/app')
   const {git} = app
   const {pathExists, isDirectory, glob, request} = app.utils
   const path = require('path')

@@ -12,7 +12,7 @@ const git = require('isomorphic-git')
 git.plugins.set('fs', fs)
 
 const logger = require('electron-timber')
-const mainLogger = logger.create({name: 'MainBrain'})
+const mainLogger = logger.create({name: 'Main'})
 mainLogger.log('Main Logger working')
 const {ipcMain} = require('electron-better-ipc')
 
@@ -83,14 +83,14 @@ const services = {}
 
 ipcMain.answerRenderer('setService', async params => {
   mainLogger.log('Called set service')
-  // services[params[name]] = params
-  // console.log('setService', JSON.stringify(params, null, 2))
 })
+
 ipcMain.answerRenderer('setServiceProperty', async params => {
   const {service, property, value} = params
   services[service] = services[service] || {}
   services[service][property] = value
 })
+
 ipcMain.answerRenderer('getServices', async () => {
   return services
 })
