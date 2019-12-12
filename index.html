@@ -146,6 +146,9 @@
       } = require('./lib/forms')
 
       listServices()
+        .then(() => {
+          console.log('Services listed')
+        })
     </script>
     <style>
     .cell-nowrap a {

@@ -91,15 +91,7 @@ ipcMain.answerRenderer('setServiceProperty', async params => {
   services[service][property] = value
 })
 
-ipcMain.answerRenderer('getServices', async () => {
-  return services
-})
-
-// ipcMain.answerRenderer('getServiceStatus', async (service) => {
-//   return 'running'
-//   // const serviceData = services[service] || {}
-//   // return serviceData.status || 'stopped'
-// })
+ipcMain.answerRenderer('getServices', async () => services)
 
 const runInstallation = async (name) => {
   try {
@@ -108,26 +100,45 @@ const runInstallation = async (name) => {
     mainLogger.log(`Installation: ${name} failed`)
   }
 }
-app.updateEditor = async () => {
-  await runInstallation('updateEditor')
-}
-app.reinstallEditor = async () => {
-  await runInstallation('reinstallEditor')
-}
-app.installEditor = async () => {
-  await runInstallation('installEditor')
-}
+
+app.updateEditor = async () => runInstallation('updateEditor')
+
+app.reinstallEditor = async () => runInstallation('reinstallEditor')
+
+app.installEditor = async () => runInstallation('installEditor')
 
 app.store = store
 app.services = services
+
 app.setService = (name, params = {}) => {
   services[name] = params
 }
+
 app.updateService = (name, params = {}) => {
   services[name] = Object.assign(services[name], params)
 }
 
-const launchApp = () => {
+const TEMPLATE = [{
+  label: 'Application',
+  submenu: [
+    {label: 'About Application', selector: 'orderFrontStandardAboutPanel:'},
+    {type: 'separator'},
+    {label: 'Quit', accelerator: 'Command+Q', click: () => { app.quit() }}
+  ]
+}, {
+  label: 'Edit',
+  submenu: [
+    {label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:'},
+    {label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:'},
+    {type: 'separator'},
+    {label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:'},
+    {label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:'},
+    {label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:'},
+    {label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:'}
+  ]
+}]
+
+function launchApp () {
   // app.addService = addService
   // app.createService = createService
 
@@ -145,27 +156,9 @@ const launchApp = () => {
     mainWindow.maximize()
     mainWindow.loadFile('index.html')
     mainWindow.show()
-    // mainWindow.webContents.openDevTools()
+    mainWindow.webContents.openDevTools()
 
-    let template = [{
-      label: 'Application',
-      submenu: [
-        {label: 'About Application', selector: 'orderFrontStandardAboutPanel:'},
-        {type: 'separator'},
-        {label: 'Quit', accelerator: 'Command+Q', click: function () { app.quit() }}
-      ]}, {
-      label: 'Edit',
-      submenu: [
-        {label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:'},
-        {label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:'},
-        {type: 'separator'},
-        {label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:'},
-        {label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:'},
-        {label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:'},
-        {label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:'}
-      ]}]
-
-    Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+    Menu.setApplicationMenu(Menu.buildFromTemplate(TEMPLATE))
 
     mainWindow.on('closed', function () {
       mainWindow = null
@@ -211,35 +204,39 @@ const launchApp = () => {
       // 49152–65535 (215 + 214 to 216 − 1)
       let portCounter = 52000
       while (!serviceDetails.port) {
-        const checkPort = portCounter++
-        if (!usedPorts.includes(checkPort)) {
-          const portProcess = await app.checkPort(checkPort)
+        if (!usedPorts.includes(portCounter)) {
+          const portProcess = await app.checkPort(portCounter)
           if (!portProcess.alreadyInUse) {
-            serviceDetails.port = checkPort
-            portSettings[service] = checkPort
+            serviceDetails.port = portCounter
+            portSettings[service] = portCounter
             app.store.set('ports', portSettings)
           }
         }
+        portCounter++
       }
       serviceDetails.path = `${app.paths.services}/${service}`
     }
     mainLogger.log(`launch ${service} on ${serviceDetails.port}`)
     await app.clearPort(serviceDetails.port)
+
     process.env.SERVICENAME = service
     process.env.SERVICEPORT = serviceDetails.port
     process.env.SERVICE_PATH = serviceDetails.path
-    let runServiceWindow = new BrowserWindow({
+
+    let browserWindow = new BrowserWindow({
       show: false,
       webPreferences: {
         nodeIntegration: true
       }
     })
-    runServiceWindow.loadFile('run-service.html')
-    runServiceWindow.on('closed', async () => {
-      runServiceWindow = null
+    browserWindow.loadFile('run-service.html')
+    browserWindow.on('closed', async () => {
+      browserWindow = null
       await app.clearPort(serviceDetails.port)
     })
-    serviceDetails.window = runServiceWindow
+
+    serviceDetails.window = browserWindow
+
     mainLogger.log('about to check service')
     const checkService = () => {
       setTimeout(() => {
@@ -363,7 +360,7 @@ const consoleLog = fs.createWriteStream(consoleLogPath, {flags: 'a'})
 process.__defineGetter__('stdout', () => { return consoleLog })
 process.__defineGetter__('stderr', () => { return consoleLog })
 
-let existingServices = getDirectories(app.paths.services)
+const existingServices = getDirectories(app.paths.services)
 
 existingServices.forEach(service => {
   services[service] = {}
@@ -379,7 +376,7 @@ const runApp = async () => {
   firstInstall = !(pathExists.sync(nvsPath) && pathExists.sync(fbEditorPath))
   await createNotificationWindow()
 
-  let installationWindow = new BrowserWindow({
+  const installationWindow = new BrowserWindow({
     show: false,
     webPreferences: {
       nodeIntegration: true
@@ -405,9 +402,8 @@ app.on('ready', () => {
   runApp()
 })
 
-const timeout = (ms) => {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
+const timeout = (t) => new Promise(resolve => { setTimeout(resolve, t) })
+
 const sleep = async (t = 3000) => {
   console.log('sleeping...')
   await timeout(t)
