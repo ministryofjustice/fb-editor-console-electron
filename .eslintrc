@@ -1,4 +1,7 @@
 {
+  "env": {
+  	"browser": true
+  },
   "extends": "@ministryofjustice/eslint-config-fb",
   "plugins": [
   	"html"
