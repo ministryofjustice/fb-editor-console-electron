@@ -190,37 +190,41 @@ function launchApp () {
     }
   })
 
+  function getPort (service) {
+    const ports = app.store.get('ports') || {}
+    return ports[service]
+  }
+
+  function setPort (service, port) {
+    const ports = app.store.get('ports') || {}
+    app.store.set('ports', {...ports, [service]: port})
+  }
+
   app.launchService = async (service) => {
     const serviceDetails = services[service]
+
     if (serviceDetails.status === 'starting') {
       return
     }
+
     serviceDetails.status = 'starting'
-    if (!serviceDetails.port) {
-      const portSettings = app.store.get('ports') || {}
-      serviceDetails.port = portSettings[service]
-      const usedPorts = Object.keys(portSettings).map(service => portSettings[service])
 
-      // 49152–65535 (215 + 214 to 216 − 1)
-      let portCounter = 52000
-      while (!serviceDetails.port) {
-        if (!usedPorts.includes(portCounter)) {
-          const portProcess = await app.checkPort(portCounter)
-          if (!portProcess.alreadyInUse) {
-            serviceDetails.port = portCounter
-            portSettings[service] = portCounter
-            app.store.set('ports', portSettings)
-          }
-        }
-        portCounter++
-      }
-      serviceDetails.path = `${app.paths.services}/${service}`
+    const ports = app.store.get('ports') || {}
+    const usedPorts = Object.values(ports)
+
+    let port = 52000
+    while (!getPort(service)) {
+      if (usedPorts.includes(port) || await app.isPortInUse(port)) port++
+      else setPort(service, port)
     }
-    mainLogger.log(`launch ${service} on ${serviceDetails.port}`)
-    await app.clearPort(serviceDetails.port)
 
-    process.env.SERVICENAME = service
-    process.env.SERVICEPORT = serviceDetails.port
+    serviceDetails.port = port // getPort(service)
+    serviceDetails.path = `${app.paths.services}/${service}`
+
+    mainLogger.log(`launch ${service} on ${serviceDetails.port}`)
+
+    process.env.SERVICE_NAME = service
+    process.env.SERVICE_PORT = serviceDetails.port
     process.env.SERVICE_PATH = serviceDetails.path
 
     let browserWindow = new BrowserWindow({
@@ -270,32 +274,31 @@ function launchApp () {
     }
   }
 
-  app.checkPort = async (PORT) => {
-    return findProcess('port', PORT)
-      .then(list => {
-        const portProcess = list[0]
-        if (portProcess) {
-          if (portProcess.cmd !== 'node bin/start.js') {
-            portProcess.alreadyInUse = true
-          }
-        }
-        return portProcess || {}
-      })
-      .catch(e => {
-        //
-      })
+  app.isPortInUse = async (PORT) => {
+    try {
+      const [
+        portProcess
+      ] = await findProcess('port', PORT)
+
+      return !!portProcess
+    } catch (e) {
+      //
+    }
   }
 
   app.clearPort = async (PORT) => {
-    const portProcess = await app.checkPort(PORT)
-    const {pid} = portProcess
-    if (pid) {
-      // process.kill(pid)
-      try {
+    try {
+      const [
+        {
+          pid
+        } = {}
+      ] = await findProcess('port', PORT)
+
+      if (pid) {
         execSync(`kill -s 9 ${pid}`)
-      } catch (e) {
-        //
       }
+    } catch (e) {
+      //
     }
   }
 

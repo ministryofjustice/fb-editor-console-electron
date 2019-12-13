@@ -21,7 +21,7 @@
 
     <meta property="og:image" content="assets/images/govuk-opengraph-image.png">
   </head>
-  <body class="govuk-template__body ">
+  <body class="govuk-template__body">
         <script>
       document.body.className = document.body.className ? `${document.body.className} js-enabled` : 'js-enabled'
     </script>
@@ -137,13 +137,17 @@
       const {
         startForm,
         stopForm,
-        restartForm,
         openForm,
         deleteForm,
-        archiveForm,
         reloadPage,
         listServices
       } = require('./lib/forms')
+
+      global.startForm = startForm
+      global.stopForm = stopForm
+      global.openForm = openForm
+      global.deleteForm = deleteForm
+      global.reloadPage = reloadPage
 
       listServices()
         .then(() => {
