@@ -9,11 +9,10 @@ const opn = require('opn')
 const request = require('request-promise-native')
 const fs = require('fs')
 const git = require('isomorphic-git')
+
 git.plugins.set('fs', fs)
 
 const logger = require('electron-timber')
-const mainLogger = logger.create({name: 'Main'})
-mainLogger.log('Main Logger working')
 const {ipcMain} = require('electron-better-ipc')
 
 const Store = require('electron-store')
@@ -22,11 +21,15 @@ const store = new Store()
 const {lstatSync, readdirSync} = fs
 const isDirectory = source => lstatSync(source).isDirectory()
 
-let firstInstall = false
+const mainLogger = logger.create({name: 'Main'})
 
-// Modules to control application life and create native browser window
+mainLogger.log('Waking up ...')
 
-const {app, BrowserWindow, Menu} = require('electron')
+const {
+  app,
+  BrowserWindow,
+  Menu
+} = require('electron')
 
 app.git = git
 app.utils = {
@@ -38,7 +41,6 @@ app.utils = {
 }
 app.windows = {}
 
-// let notificationWindow
 let mainWindow
 
 const createNotificationWindow = async () => {
@@ -47,7 +49,7 @@ const createNotificationWindow = async () => {
     frame: false,
     toolbar: false,
     width: 400,
-    height: firstInstall ? 200 : 134
+    height: isProbablyFirstUse() ? 200 : 134
   })
   notificationWindow.on('blur', () => {
     notificationWindow.focus()
@@ -60,33 +62,24 @@ const createNotificationWindow = async () => {
 const displayNotification = async (message, options = {}) => {
   const params = typeof message === 'object' ? message : Object.assign(options, {message})
   const notificationWindow = app.windows.notificationWindow
-  // try {
   await ipcMain.callRenderer(notificationWindow, 'send-notification', params)
-  // } catch (e) {
-  //   //
-  // }
-  // try {
-  // await ipcMain.callRenderer(notificationWindow, 'send-notification', {message:'gosh', dismiss: true})
-  // } catch(e) {}
-
   mainLogger.log('displayNotification', {message})
 }
+
 app.notify = displayNotification
 app.dismissNotification = () => {
   app.notify({dismiss: true})
 }
 
-const getDirectories = source =>
-  readdirSync(source).map(name => path.join(source, name)).filter(isDirectory).map(dir => path.basename(dir))
+const getDirectories = source => readdirSync(source).map(name => path.join(source, name)).filter(isDirectory).map(dir => path.basename(dir))
 
 const services = {}
 
-ipcMain.answerRenderer('setService', async params => {
+ipcMain.answerRenderer('setService', async () => {
   mainLogger.log('Called set service')
 })
 
-ipcMain.answerRenderer('setServiceProperty', async params => {
-  const {service, property, value} = params
+ipcMain.answerRenderer('setServiceProperty', async ({service, property, value}) => {
   services[service] = services[service] || {}
   services[service][property] = value
 })
@@ -118,87 +111,126 @@ app.updateService = (name, params = {}) => {
   services[name] = Object.assign(services[name], params)
 }
 
-const TEMPLATE = [{
-  label: 'Application',
-  submenu: [
-    {label: 'About Application', selector: 'orderFrontStandardAboutPanel:'},
-    {type: 'separator'},
-    {label: 'Quit', accelerator: 'Command+Q', click: () => { app.quit() }}
-  ]
-}, {
-  label: 'Edit',
-  submenu: [
-    {label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:'},
-    {label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:'},
-    {type: 'separator'},
-    {label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:'},
-    {label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:'},
-    {label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:'},
-    {label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:'}
-  ]
-}]
+const TEMPLATE = [
+  {
+    label: 'Application',
+    submenu: [
+      {label: 'About Application', selector: 'orderFrontStandardAboutPanel:'},
+      {type: 'separator'},
+      {label: 'Quit', accelerator: 'Command+Q', click: () => { app.quit() }}
+    ]
+  },
+  {
+    label: 'Edit',
+    submenu: [
+      {label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:'},
+      {label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:'},
+      {type: 'separator'},
+      {label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:'},
+      {label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:'},
+      {label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:'},
+      {label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:'}
+    ]
+  }
+]
+
+function createMainWindow () {
+  mainWindow = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  })
+
+  mainWindow.maximize()
+  mainWindow.loadFile('index.html')
+  mainWindow.show()
+
+  mainWindow.webContents.openDevTools()
+
+  const menu = Menu.buildFromTemplate(TEMPLATE)
+  Menu.setApplicationMenu(menu)
+
+  mainWindow.on('closed', () => { mainWindow = null })
+
+  /*
+   *  Expose a reference
+   */
+  app.windows.mainWindow = mainWindow
+}
+
+function getPort (service) {
+  const ports = app.store.get('ports') || {}
+  return ports[service]
+}
+
+function setPort (service, port) {
+  const ports = app.store.get('ports') || {}
+  app.store.set('ports', {...ports, [service]: port})
+}
+
+function clearPort (service) {
+  const ports = app.store.get('ports') || {}
+  delete ports[service]
+  app.store.set('ports', ports)
+}
+
+function confirmServiceIsRunning (serviceDetails, i = 0) {
+  setTimeout(() => {
+    request.get(`http://localhost:${serviceDetails.port}`)
+      .then(() => {
+        serviceDetails.status = 'running'
+        const {
+          name,
+          port
+        } = serviceDetails
+
+        mainLogger.log(`"${name}" started on port ${port}`)
+        if (mainWindow) mainWindow.webContents.executeJavaScript(`listServices('${name}')`)
+      })
+      .catch(() => {
+        /*
+         *  Let's not do this indefinitely
+         */
+        if (i++ < 1000) confirmServiceIsRunning(serviceDetails, i)
+      })
+  }, 250)
+}
+
+async function beforeQuit () {
+  await Promise.all(
+    Object
+      .entries(services)
+      .filter(([service, {status = 'stopped'}]) => status === 'running')
+      .map(async ([service]) => {
+        await app.stopService(service)
+        delete services[service]
+      })
+  )
+
+  app.store.set('ports', {})
+}
+
+const quit = () => mainLogger.log('Goodbye!')
+
+const exit = async () => beforeQuit()
 
 function launchApp () {
-  // app.addService = addService
-  // app.createService = createService
+  app.on('before-quit', beforeQuit)
 
-  function createMainWindow () {
-    if (mainWindow) {
-      return
-    }
-    mainWindow = new BrowserWindow({
-      show: false,
-      webPreferences: {
-        nodeIntegration: true
-      }
-    })
-    app.windows.mainWindow = mainWindow
-    mainWindow.maximize()
-    mainWindow.loadFile('index.html')
-    mainWindow.show()
-    mainWindow.webContents.openDevTools()
+  app.on('quit', quit)
 
-    Menu.setApplicationMenu(Menu.buildFromTemplate(TEMPLATE))
-
-    mainWindow.on('closed', function () {
-      mainWindow = null
-    })
-  }
-
-  app.on('quit', function () {
-    mainLogger.log('Form Builder Console quitting')
-    Object.keys(services).forEach(service => {
-      mainLogger.log(`Making sure ${service} is stopped`)
-      app.stopService(service)
-    })
-  })
-
-  // Quit when all windows are closed.
-  app.on('window-all-closed', function () {
+  app.on('window-all-closed', () => {
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
-    if (process.platform !== 'darwin') {
-      app.quit()
-    }
+    if (process.platform !== 'darwin') app.quit()
   })
 
-  app.on('activate', function () {
+  app.on('activate', () => {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (mainWindow === null) {
-      createMainWindow()
-    }
+    if (!mainWindow) createMainWindow()
   })
-
-  function getPort (service) {
-    const ports = app.store.get('ports') || {}
-    return ports[service]
-  }
-
-  function setPort (service, port) {
-    const ports = app.store.get('ports') || {}
-    app.store.set('ports', {...ports, [service]: port})
-  }
 
   app.launchService = async (service) => {
     const serviceDetails = services[service]
@@ -218,14 +250,17 @@ function launchApp () {
       else setPort(service, port)
     }
 
-    serviceDetails.port = port // getPort(service)
-    serviceDetails.path = `${app.paths.services}/${service}`
+    const path = `${app.paths.services}/${service}`
 
-    mainLogger.log(`launch ${service} on ${serviceDetails.port}`)
+    serviceDetails.name = service
+    serviceDetails.port = port // getPort(service)
+    serviceDetails.path = path
+
+    mainLogger.log(`Starting "${service}" on port ${port}`)
 
     process.env.SERVICE_NAME = service
-    process.env.SERVICE_PORT = serviceDetails.port
-    process.env.SERVICE_PATH = serviceDetails.path
+    process.env.SERVICE_PORT = port
+    process.env.SERVICE_PATH = path
 
     let browserWindow = new BrowserWindow({
       show: false,
@@ -233,6 +268,7 @@ function launchApp () {
         nodeIntegration: true
       }
     })
+
     browserWindow.loadFile('run-service.html')
     browserWindow.on('closed', async () => {
       browserWindow = null
@@ -241,64 +277,50 @@ function launchApp () {
 
     serviceDetails.window = browserWindow
 
-    mainLogger.log('about to check service')
-    const checkService = () => {
-      setTimeout(() => {
-        request.get(`http://localhost:${serviceDetails.port}`)
-          .then((res) => {
-            const mainWindow = app.windows.mainWindow
-            serviceDetails.status = 'running'
-            mainWindow.webContents.executeJavaScript(`listServices('${service}')`)
-          })
-          .catch(() => {
-            checkService()
-          })
-      }, 250)
-    }
-    checkService()
+    confirmServiceIsRunning(serviceDetails)
   }
 
   app.stopService = async (service) => {
     const serviceDetails = services[service]
     serviceDetails.status = 'stopped'
 
-    app.clearPort(serviceDetails.port)
+    await app.clearPort(serviceDetails.port)
+
+    clearPort(service)
 
     if (serviceDetails.window) {
       try {
         serviceDetails.window.close()
         delete serviceDetails.window
-      } catch (e) {
-        //
+      } catch ({message}) {
+        mainLogger.error(message)
       }
     }
   }
 
-  app.isPortInUse = async (PORT) => {
+  app.isPortInUse = async (port) => {
     try {
       const [
         portProcess
-      ] = await findProcess('port', PORT)
+      ] = await findProcess('port', port) || []
 
       return !!portProcess
-    } catch (e) {
-      //
+    } catch ({message}) {
+      mainLogger.error(message)
     }
   }
 
-  app.clearPort = async (PORT) => {
+  app.clearPort = async (port) => {
     try {
       const [
         {
           pid
         } = {}
-      ] = await findProcess('port', PORT)
+      ] = await findProcess('port', port) || []
 
-      if (pid) {
-        execSync(`kill -s 9 ${pid}`)
-      }
-    } catch (e) {
-      //
+      if (pid) execSync(`kill -s 9 ${pid}`)
+    } catch ({message}) {
+      mainLogger.error(message)
     }
   }
 
@@ -309,12 +331,17 @@ function launchApp () {
 
   app.deleteService = async (serviceName) => {
     await app.stopService(serviceName)
-    const deleteServicePath = path.join(app.paths.services, serviceName)
-    rimraf.sync(deleteServicePath)
-    const portSettings = app.store.get('ports')
-    delete portSettings[serviceName]
-    app.store.set('ports', portSettings)
+
+    const servicePath = path.join(app.paths.services, serviceName)
+
+    rimraf.sync(servicePath)
+
+    const ports = app.store.get('ports')
+
+    delete ports[serviceName]
     delete services[serviceName]
+
+    app.store.set('ports', ports)
   }
 
   app.openExternal = async (url) => {
@@ -323,60 +350,76 @@ function launchApp () {
 
   // In this file you can include the rest of your app's specific main process
   // code. You can also put them in separate files and require them here.
-  createMainWindow()
+  if (!mainWindow) createMainWindow()
 }
 
 // Stash all path refs
 app.paths = {}
 
-let homeDir = ospath.home()
-homeDir = path.join(homeDir, 'documents')
-// homeDir = app.getPath('documents')
+const homeDir = path.join(ospath.home(), 'documents')
 
-const fbPath = path.join(homeDir, 'formbuilder')
-app.paths.formbuilder = fbPath
-execSync(`mkdir -p ${fbPath}`)
+const formBuilderPath = path.join(homeDir, 'formbuilder')
+app.paths.formbuilder = formBuilderPath
 
-const fbLogsPath = path.join(fbPath, 'logs')
-app.paths.logs = fbLogsPath
-execSync(`mkdir -p ${fbLogsPath}`)
+const logPath = path.join(formBuilderPath, 'logs')
+app.paths.logs = logPath
 
-const nvsPath = path.join(fbPath, '.nvs')
+const nvsPath = path.join(formBuilderPath, '.nvs')
 app.paths.nvs = nvsPath
 
-const fbEditorPath = path.join(fbPath, '.editor')
-app.paths.editor = fbEditorPath
+const editorPath = path.join(formBuilderPath, '.editor')
+app.paths.editor = editorPath
 
-const fbServicesPath = path.join(fbPath, 'forms')
-app.paths.services = fbServicesPath
-execSync(`mkdir -p ${fbServicesPath}`)
+const servicesPath = path.join(formBuilderPath, 'forms')
+app.paths.services = servicesPath
+
+execSync(`mkdir -p ${formBuilderPath}`)
+execSync(`mkdir -p ${logPath}`)
+execSync(`mkdir -p ${servicesPath}`)
 
 const consoleLogPath = path.join(app.paths.logs, 'fb.console.log')
+const consoleErrPath = path.join(app.paths.logs, 'fb.console.error')
+
 try {
   fs.unlinkSync(consoleLogPath)
 } catch (e) {
   //
 }
+
+try {
+  fs.unlinkSync(consoleErrPath)
+} catch (e) {
+  //
+}
+
 const consoleLog = fs.createWriteStream(consoleLogPath, {flags: 'a'})
+const consoleErr = fs.createWriteStream(consoleErrPath, {flags: 'a'})
 
 // redirect stdout / stderr
 process.__defineGetter__('stdout', () => { return consoleLog })
-process.__defineGetter__('stderr', () => { return consoleLog })
+process.__defineGetter__('stderr', () => { return consoleErr })
 
 const existingServices = getDirectories(app.paths.services)
 
-existingServices.forEach(service => {
+existingServices.forEach((service) => {
   services[service] = {}
 })
 
-const setUp = async () => {
-  app.notify('Setting up editor', {phase: 'Setting up editor'})
+async function install () {
+  app.notify('Starting Editor installation ...', {phase: 'Install Editor'})
+
   await app.installEditor()
-  app.notify('All dependencies successfully installed - launching app', {dismiss: true})
+
+  app.notify('Installing dependencies ...', {phase: 'Install Editor'})
+
+  app.installEditorDependencies()
+
+  app.notify('Editor installation finished', {dismiss: true})
 }
 
-const runApp = async () => {
-  firstInstall = !(pathExists.sync(nvsPath) && pathExists.sync(fbEditorPath))
+const isProbablyFirstUse = () => !(pathExists.sync(nvsPath) && pathExists.sync(editorPath))
+
+async function initialise () {
   await createNotificationWindow()
 
   const installationWindow = new BrowserWindow({
@@ -385,30 +428,35 @@ const runApp = async () => {
       nodeIntegration: true
     }
   })
+
   installationWindow.loadFile('installation.html')
+
   app.windows.installation = installationWindow
 
-  if (firstInstall) {
+  if (isProbablyFirstUse()) {
     await sleep(1000)
     try {
-      await setUp()
+      await install()
     } catch (e) {
-      console.log('Setup went wrong', e)
+      mainLogger.error('Installation failed')
     }
   }
-  console.log('Launching app')
+
   launchApp()
 }
 
-app.on('ready', () => {
-  console.log('Running the app')
-  runApp()
+app.on('ready', async () => {
+  mainLogger.log('Hello!')
+
+  try {
+    await initialise()
+  } catch (e) {
+    mainLogger.error('Initialisation failed')
+  }
+
+  mainLogger.log('Ready!')
 })
 
-const timeout = (t) => new Promise(resolve => { setTimeout(resolve, t) })
+const sleep = (t = 3000) => new Promise(resolve => { setTimeout(resolve, t) })
 
-const sleep = async (t = 3000) => {
-  console.log('sleeping...')
-  await timeout(t)
-  console.log('waking up...')
-}
+process.on('exit', exit)
