@@ -1,0 +1,7 @@
+@import-normalize;
+
+$govuk-assets-path: '../../assets/';
+
+@import "govuk-frontend/govuk/all";
+
+@import "all";

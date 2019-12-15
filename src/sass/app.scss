@@ -1,0 +1,42 @@
+@import-normalize;
+
+$govuk-assets-path: '../../assets/';
+
+@import "govuk-frontend/govuk/all";
+
+@import "all";
+
+.cell-nowrap a {
+  display: block;
+}
+
+.cell-nowrap .hidden {
+  display: none;
+}
+
+.invisible {
+  visibility: hidden;
+}
+
+.formStatus {
+  display: inline-block;
+  padding: 0.25em 0.5em;
+  color: #000;
+  background-color: #fff;
+  border: solid 1px #000;
+  font-size: 12px;
+  text-transform: uppercase;
+  cursor: default;
+  min-width: 5rem;
+  text-align: center;
+}
+
+.formStatus--starting {
+  background-color: #ffbf47;
+}
+
+.formStatus--running {
+  background-color: #006435;
+  border-color: #006435;
+  color: #fff;
+}
