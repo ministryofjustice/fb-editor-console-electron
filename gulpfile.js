@@ -14,6 +14,15 @@ const {
   buildCssWatch
 } = require('~/src/gulp')
 
+const {
+  app: transformApp,
+  add: transformAdd,
+  create: transformCreate,
+  installation: transformInstallation,
+  notification: transformNotification,
+  runService: transformRunService
+} = require('~/src/gulp/transform')
+
 gulp
   .task('build:fonts:clean', buildFontsClean)
 
@@ -49,3 +58,24 @@ gulp
 
 gulp
   .task('build:watch', gulp.parallel('build:fonts:watch', 'build:images:watch', 'build:css:watch'))
+
+gulp
+  .task('transform:app', transformApp)
+
+gulp
+  .task('transform:add', transformAdd)
+
+gulp
+  .task('transform:create', transformCreate)
+
+gulp
+  .task('transform:installation', transformInstallation)
+
+gulp
+  .task('transform:notification', transformNotification)
+
+gulp
+  .task('transform:run-service', transformRunService)
+
+gulp
+  .task('transform', gulp.parallel('transform:app', 'transform:add', 'transform:create', 'transform:installation', 'transform:notification', 'transform:run-service'))

@@ -12,7 +12,7 @@ const {
   targetPath
 } = require('~/src/paths')
 
-const buildSourcePath = path.join(sourcePath, 'js/index.js')
+const buildSourcePath = path.join(sourcePath, 'js/app.js')
 const buildTargetPath = path.join(targetPath, 'javascripts')
 
 const {version} = require('~/package')
