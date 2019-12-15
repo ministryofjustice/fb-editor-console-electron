@@ -1,25 +1,31 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
-    <title>Installing…</title>
-    <link rel="stylesheet" href="assets/stylesheets/notification-0.5.5.css">
+    <meta charset="utf-8" />
+    <title>Notification</title>
+    <link rel="stylesheet" href="assets/stylesheets/notification-0.5.5.css" />
   </head>
   <body>
-  <div class="pane">
-    <div class="pane--header">
-      <h1 id="consoleInstallerTitle" class="govuk-heading-l">Form Builder <span>Editor Console</span></h1>
+    <div class="pane">
+      <div class="pane--header">
+        <h1 id="consoleInstallerTitle" class="govuk-heading-l">
+          Form Builder <span>Editor Console</span>
+        </h1>
+      </div>
+      <div class="pane--body">
+        <div class="spinner">
+          <img src="assets/images/govuk-crown-animated.gif" alt="" />
+        </div>
+        <div class="info govuk-body-m">
+          <h2 id="consoleInstallerPhase" class="govuk-heading-l">
+            Setting up editor
+          </h2>
+          <p id="consoleInstallerMessage" class="govuk-body-l">
+            Installing editor
+          </p>
+        </div>
+      </div>
     </div>
-    <div class="pane--body">
-    <div class="spinner">
-    <img src="assets/images/govuk-crown-animated.gif" alt="">
-    </div>
-    <div class="info govuk-body-m">
-      <h2 id="consoleInstallerPhase" class="govuk-heading-l">Setting up editor</h2>
-      <p id="consoleInstallerMessage" class="govuk-body-l">Installing editor</p>
-    </div>
-  </div>
-  </div>
     <script>
       /*
        *  App
