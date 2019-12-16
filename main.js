@@ -43,85 +43,6 @@ const {
   Menu
 } = require('electron')
 
-app.git = git
-app.utils = {
-  pathExists,
-  isDirectory,
-  glob,
-  request,
-  rimraf
-}
-app.windows = {}
-
-let mainWindow
-
-async function createNotificationWindow () {
-  const notificationWindow = new BrowserWindow({
-    transparent: true,
-    frame: false,
-    toolbar: false,
-    width: 400,
-    height: isProbablyFirstUse() ? 200 : 134
-  })
-  notificationWindow.on('blur', () => {
-    notificationWindow.focus()
-  })
-  notificationWindow.loadFile('notification.html')
-  notificationWindow.hide()
-  app.windows.notificationWindow = notificationWindow
-}
-
-async function displayNotification (message, options = {}) {
-  const params = typeof message === 'object' ? message : Object.assign(options, {message})
-  const notificationWindow = app.windows.notificationWindow
-  await ipcMain.callRenderer(notificationWindow, 'send-notification', params)
-  mainLogger.log('displayNotification', {message})
-}
-
-app.notify = displayNotification
-
-app.dismissNotification = () => app.notify({dismiss: true})
-
-const getDirectories = source => readdirSync(source).map(name => path.join(source, name)).filter(isDirectory).map(dir => path.basename(dir))
-
-const services = {}
-
-ipcMain.answerRenderer('setService', () => mainLogger.log('Set service'))
-
-ipcMain.answerRenderer('setServiceProperty', async ({service, property, value}) => {
-  mainLogger.log('Set service property')
-
-  services[service] = services[service] || {}
-  services[service][property] = value
-})
-
-ipcMain.answerRenderer('getServices', () => services)
-
-async function runInstallation (name) {
-  try {
-    await ipcMain.callRenderer(app.windows.installation, name)
-  } catch (e) {
-    mainLogger.log(`Process "${name}" failed`)
-  }
-}
-
-app.updateEditor = async () => runInstallation('updateEditor')
-
-app.reinstallEditor = async () => runInstallation('reinstallEditor')
-
-app.installEditor = async () => runInstallation('installEditor')
-
-app.store = store
-app.services = services
-
-app.setService = (name, params = {}) => {
-  services[name] = params
-}
-
-app.updateService = (name, params = {}) => {
-  services[name] = Object.assign(services[name], params)
-}
-
 const TEMPLATE = [
   {
     label: 'Application',
@@ -144,6 +65,40 @@ const TEMPLATE = [
     ]
   }
 ]
+
+const services = {}
+
+app.git = git
+app.utils = {
+  pathExists,
+  isDirectory,
+  glob,
+  request,
+  rimraf
+}
+app.windows = {}
+app.store = store
+app.services = services
+app.paths = {}
+
+let mainWindow
+
+const getDirectories = (source) => readdirSync(source).map((name) => path.join(source, name)).filter(isDirectory).map((directory) => path.basename(directory))
+
+async function createNotificationWindow () {
+  const notificationWindow = new BrowserWindow({
+    transparent: true,
+    frame: false,
+    toolbar: false,
+    width: 400,
+    height: isProbablyFirstUse() ? 200 : 134
+  })
+  notificationWindow.on('blur', () => notificationWindow.focus())
+  notificationWindow.loadFile('notification.html')
+  notificationWindow.hide()
+
+  app.windows.notificationWindow = notificationWindow
+}
 
 function createMainWindow () {
   mainWindow = new BrowserWindow({
@@ -184,6 +139,14 @@ function clearPort (service) {
   const ports = app.store.get('ports') || {}
   delete ports[service]
   app.store.set('ports', ports)
+}
+
+async function runInstallation (name) {
+  try {
+    await ipcMain.callRenderer(app.windows.installation, name)
+  } catch (e) {
+    mainLogger.log(`Process "${name}" failed`)
+  }
 }
 
 function confirmServiceIsRunning (serviceDetails, i = 0) {
@@ -364,8 +327,91 @@ function launchApp () {
   if (!mainWindow) createMainWindow()
 }
 
-// Stash all path refs
-app.paths = {}
+async function install () {
+  app.notify('Starting Editor installation ...', {phase: 'Install Editor'})
+
+  await app.installEditor()
+
+  app.notify('Installing dependencies ...', {phase: 'Install Editor'})
+
+  app.installEditorDependencies()
+
+  app.notify('Editor installation finished', {dismiss: true})
+}
+
+const isProbablyFirstUse = () => !(pathExists.sync(nvsPath) && pathExists.sync(editorPath))
+
+async function initialise () {
+  await createNotificationWindow()
+
+  const installationWindow = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  })
+
+  installationWindow.loadFile('installation.html')
+
+  app.windows.installation = installationWindow
+
+  if (isProbablyFirstUse()) {
+    await sleep(1000)
+    try {
+      await install()
+    } catch (e) {
+      mainLogger.error('Installation failed')
+    }
+  }
+
+  launchApp()
+}
+
+const sleep = (t = 3000) => new Promise(resolve => { setTimeout(resolve, t) })
+
+app.on('ready', async () => {
+  mainLogger.log('Hello!')
+
+  try {
+    await initialise()
+  } catch (e) {
+    mainLogger.error('Initialisation failed')
+  }
+
+  mainLogger.log('Ready!')
+})
+
+app.notify = async function displayNotification (message, options = {}) {
+  const params = typeof message === 'object' ? message : Object.assign(options, {message})
+  const {windows: {notificationWindow}} = app
+  if (notificationWindow) await ipcMain.callRenderer(notificationWindow, 'send-notification', params)
+  mainLogger.log('displayNotification', {message})
+}
+
+app.dismissNotification = () => app.notify({dismiss: true})
+
+ipcMain.answerRenderer('setService', () => mainLogger.log('Set service'))
+
+ipcMain.answerRenderer('setServiceProperty', async ({service, property, value}) => {
+  services[service] = services[service] || {}
+  services[service][property] = value
+})
+
+ipcMain.answerRenderer('getServices', () => services)
+
+app.updateEditor = async () => runInstallation('updateEditor')
+
+app.reinstallEditor = async () => runInstallation('reinstallEditor')
+
+app.installEditor = async () => runInstallation('installEditor')
+
+app.setService = (name, params = {}) => {
+  services[name] = params
+}
+
+app.updateService = (name, params = {}) => {
+  services[name] = Object.assign(services[name], params)
+}
 
 const homeDir = path.join(ospath.home(), 'documents')
 
@@ -415,59 +461,5 @@ const existingServices = getDirectories(app.paths.services)
 existingServices.forEach((service) => {
   services[service] = {}
 })
-
-async function install () {
-  app.notify('Starting Editor installation ...', {phase: 'Install Editor'})
-
-  await app.installEditor()
-
-  app.notify('Installing dependencies ...', {phase: 'Install Editor'})
-
-  app.installEditorDependencies()
-
-  app.notify('Editor installation finished', {dismiss: true})
-}
-
-const isProbablyFirstUse = () => !(pathExists.sync(nvsPath) && pathExists.sync(editorPath))
-
-async function initialise () {
-  await createNotificationWindow()
-
-  const installationWindow = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  })
-
-  installationWindow.loadFile('installation.html')
-
-  app.windows.installation = installationWindow
-
-  if (isProbablyFirstUse()) {
-    await sleep(1000)
-    try {
-      await install()
-    } catch (e) {
-      mainLogger.error('Installation failed')
-    }
-  }
-
-  launchApp()
-}
-
-app.on('ready', async () => {
-  mainLogger.log('Hello!')
-
-  try {
-    await initialise()
-  } catch (e) {
-    mainLogger.error('Initialisation failed')
-  }
-
-  mainLogger.log('Ready!')
-})
-
-const sleep = (t = 3000) => new Promise(resolve => { setTimeout(resolve, t) })
 
 process.on('exit', exit)
