@@ -5,7 +5,7 @@ const rimraf = require('rimraf')
 const ospath = require('ospath')
 const findProcess = require('find-process')
 const glob = require('glob')
-const opn = require('opn')
+const open = require('open')
 const request = require('request-promise-native')
 const fs = require('fs')
 const git = require('isomorphic-git')
@@ -326,7 +326,7 @@ function launchApp () {
 
   app.openService = async (service) => {
     const serviceDetails = services[service]
-    opn(`http://localhost:${serviceDetails.port}/admin/flow`)
+    open(`http://localhost:${serviceDetails.port}/admin/flow`)
   }
 
   app.deleteService = async (serviceName) => {
@@ -345,7 +345,7 @@ function launchApp () {
   }
 
   app.openExternal = async (url) => {
-    opn(url)
+    open(url)
   }
 
   // In this file you can include the rest of your app's specific main process
