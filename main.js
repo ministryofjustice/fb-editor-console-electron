@@ -13,17 +13,29 @@ const git = require('isomorphic-git')
 git.plugins.set('fs', fs)
 
 const logger = require('electron-timber')
-const {ipcMain} = require('electron-better-ipc')
+const {
+  ipcMain
+} = require('electron-better-ipc')
 
 const Store = require('electron-store')
 const store = new Store()
 
-const {lstatSync, readdirSync} = fs
+const {
+  lstatSync,
+  readdirSync
+} = fs
+
 const isDirectory = source => lstatSync(source).isDirectory()
 
 const mainLogger = logger.create({name: 'Main'})
 
 mainLogger.log('Waking up ...')
+
+const {
+  env: {
+    NODE_ENV = 'production'
+  }
+} = process
 
 const {
   app,
@@ -145,7 +157,7 @@ function createMainWindow () {
   mainWindow.loadFile('index.html')
   mainWindow.show()
 
-  mainWindow.webContents.openDevTools()
+  if (NODE_ENV === 'development') mainWindow.webContents.openDevTools()
 
   const menu = Menu.buildFromTemplate(TEMPLATE)
   Menu.setApplicationMenu(menu)
