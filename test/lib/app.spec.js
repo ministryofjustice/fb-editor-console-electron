@@ -1,3 +1,5 @@
+const electron = require('~/mock/electron')
+
 const proxyquire = require('proxyquire')
 
 const chai = require('chai')
@@ -10,11 +12,7 @@ const {
   app,
   remote
 } = proxyquire('~/lib/app', {
-  electron: {
-    remote: {
-      app: {}
-    }
-  }
+  electron
 })
 
 describe('~/fb-editor-console-electron/lib/app', () => {
