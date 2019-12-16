@@ -43,7 +43,7 @@ app.windows = {}
 
 let mainWindow
 
-const createNotificationWindow = async () => {
+async function createNotificationWindow () {
   const notificationWindow = new BrowserWindow({
     transparent: true,
     frame: false,
@@ -59,7 +59,7 @@ const createNotificationWindow = async () => {
   app.windows.notificationWindow = notificationWindow
 }
 
-const displayNotification = async (message, options = {}) => {
+async function displayNotification (message, options = {}) {
   const params = typeof message === 'object' ? message : Object.assign(options, {message})
   const notificationWindow = app.windows.notificationWindow
   await ipcMain.callRenderer(notificationWindow, 'send-notification', params)
@@ -67,30 +67,29 @@ const displayNotification = async (message, options = {}) => {
 }
 
 app.notify = displayNotification
-app.dismissNotification = () => {
-  app.notify({dismiss: true})
-}
+
+app.dismissNotification = () => app.notify({dismiss: true})
 
 const getDirectories = source => readdirSync(source).map(name => path.join(source, name)).filter(isDirectory).map(dir => path.basename(dir))
 
 const services = {}
 
-ipcMain.answerRenderer('setService', async () => {
-  mainLogger.log('Called set service')
-})
+ipcMain.answerRenderer('setService', () => mainLogger.log('Set service'))
 
 ipcMain.answerRenderer('setServiceProperty', async ({service, property, value}) => {
+  mainLogger.log('Set service property')
+
   services[service] = services[service] || {}
   services[service][property] = value
 })
 
-ipcMain.answerRenderer('getServices', async () => services)
+ipcMain.answerRenderer('getServices', () => services)
 
-const runInstallation = async (name) => {
+async function runInstallation (name) {
   try {
     await ipcMain.callRenderer(app.windows.installation, name)
   } catch (e) {
-    mainLogger.log(`Installation: ${name} failed`)
+    mainLogger.log(`Process "${name}" failed`)
   }
 }
 
