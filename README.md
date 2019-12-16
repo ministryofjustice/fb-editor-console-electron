@@ -34,7 +34,6 @@ Forms are created as Git repositories which are cloned to your file system. The 
 
 **Form Builder Console** does not currently provide a way to _commit_ or _push_ those changes - you must use your own Git client.
 
-
 ## Installation problems
 
 If you encounter a dialog window like this:
