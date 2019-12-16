@@ -20,7 +20,8 @@ const {
   create: transformCreate,
   installation: transformInstallation,
   notification: transformNotification,
-  runService: transformRunService
+  runService: transformRunService,
+  settings: transformSettings
 } = require('~/src/gulp/transform')
 
 gulp
@@ -78,4 +79,7 @@ gulp
   .task('transform:run-service', transformRunService)
 
 gulp
-  .task('transform', gulp.parallel('transform:app', 'transform:add', 'transform:create', 'transform:installation', 'transform:notification', 'transform:run-service'))
+  .task('transform:settings', transformSettings)
+
+gulp
+  .task('transform', gulp.parallel('transform:app', 'transform:add', 'transform:create', 'transform:installation', 'transform:notification', 'transform:run-service', 'transform:settings'))

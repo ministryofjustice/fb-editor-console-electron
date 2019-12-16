@@ -16,7 +16,7 @@ const {version} = require('~/package')
 const JAVASCRIPTS = /(assets\/javascripts\/app)-.*(.js)/
 const STYLESHEETS = /(assets\/stylesheets\/installation)-.*(.css)/
 
-const filePath = path.resolve(currentDir, 'index.html')
+const filePath = path.resolve(currentDir, 'installation.html')
 
 const getFileData = async (filePath) => readFile(filePath, 'utf8')
 const putFileData = async (filePath, fileData) => writeFile(filePath, fileData, 'utf8')
