@@ -393,14 +393,14 @@ const consoleErrPath = path.join(app.paths.logs, 'fb.console.error')
 
 try {
   fs.unlinkSync(consoleLogPath)
-} catch (e) {
-  //
+} catch ({message}) {
+  mainLogger.error(message)
 }
 
 try {
   fs.unlinkSync(consoleErrPath)
-} catch (e) {
-  //
+} catch ({message}) {
+  mainLogger.error(message)
 }
 
 const consoleLog = fs.createWriteStream(consoleLogPath, {flags: 'a'})
