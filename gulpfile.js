@@ -3,16 +3,16 @@ require('@ministryofjustice/module-alias/register')
 const gulp = require('gulp')
 
 const {
-  buildFontsClean,
-  buildFonts,
-  buildFontsWatch,
-  buildImagesClean,
-  buildImages,
-  buildImagesWatch,
-  buildCssClean,
-  buildCss,
-  buildCssWatch
-} = require('~/src/gulp')
+  fontsClean: buildFontsClean,
+  fonts: buildFonts,
+  fontsWatch: buildFontsWatch,
+  imagesClean: buildImagesClean,
+  images: buildImages,
+  imagesWatch: buildImagesWatch,
+  cssClean: buildCssClean,
+  css: buildCss,
+  cssWatch: buildCssWatch
+} = require('~/src/gulp/build')
 
 const {
   app: transformApp,
