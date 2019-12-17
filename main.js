@@ -85,17 +85,32 @@ let mainWindow
 
 const getDirectories = (source) => readdirSync(source).map((name) => path.join(source, name)).filter(isDirectory).map((directory) => path.basename(directory))
 
+function getNotificationWindow () {
+  const {
+    windows: {
+      notificationWindow
+    }
+  } = app
+
+  return notificationWindow
+}
+
 async function createNotificationWindow () {
   const notificationWindow = new BrowserWindow({
     transparent: true,
     frame: false,
     toolbar: false,
     width: 400,
-    height: isProbablyFirstUse() ? 200 : 134
+    height: isProbablyFirstUse() ? 200 : 134,
+    webPreferences: {
+      nodeIntegration: true
+    }
   })
   notificationWindow.on('blur', () => notificationWindow.focus())
   notificationWindow.loadFile('notification.html')
   notificationWindow.hide()
+
+  if (NODE_ENV === 'development') notificationWindow.webContents.openDevTools()
 
   app.windows.notificationWindow = notificationWindow
 }
@@ -328,15 +343,15 @@ function launchApp () {
 }
 
 async function install () {
-  app.notify('Starting Editor installation ...', {phase: 'Install Editor'})
+  await app.notify('Starting Editor installation ...', {phase: 'Install Editor'})
 
   await app.installEditor()
 
-  app.notify('Installing dependencies ...', {phase: 'Install Editor'})
+  await app.notify('Installing dependencies ...', {phase: 'Install Editor'})
 
   app.installEditorDependencies()
 
-  app.notify('Editor installation finished', {dismiss: true})
+  await app.notify('Editor installation finished', {dismiss: true})
 }
 
 const isProbablyFirstUse = () => !(pathExists.sync(nvsPath) && pathExists.sync(editorPath))
@@ -383,12 +398,20 @@ app.on('ready', async () => {
 
 app.notify = async function displayNotification (message, options = {}) {
   const params = typeof message === 'object' ? message : Object.assign(options, {message})
-  const {windows: {notificationWindow}} = app
-  if (notificationWindow) await ipcMain.callRenderer(notificationWindow, 'send-notification', params)
-  mainLogger.log('displayNotification', {message})
+
+  const notificationWindow = getNotificationWindow()
+  if (notificationWindow) {
+    notificationWindow.show()
+    await ipcMain.callRenderer(notificationWindow, 'send-notification', params)
+  }
 }
 
-app.dismissNotification = () => app.notify({dismiss: true})
+app.dismissNotification = async function dismissNotification () {
+  await app.notify({dismiss: true})
+
+  const notificationWindow = getNotificationWindow()
+  if (notificationWindow) notificationWindow.hide()
+}
 
 ipcMain.answerRenderer('setService', () => mainLogger.log('Set service'))
 
