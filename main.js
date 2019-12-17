@@ -10,8 +10,12 @@ const request = require('request-promise-native')
 const fs = require('fs')
 const git = require('isomorphic-git')
 const logger = require('electron-timber')
+const stripAnsi = require('strip-ansi')
+const yargsParser = require('yargs-parser')
 
-const mainLogger = logger.create({name: 'Main'})
+const args = new Map(Object.entries(yargsParser(process.argv.slice(2))))
+
+logger.setDefaults({logLevel: 'info'})
 
 git.plugins.set('fs', fs)
 
@@ -27,13 +31,38 @@ const {
   readdirSync
 } = fs
 
-const isDirectory = source => lstatSync(source).isDirectory()
+const isDirectory = (source) => lstatSync(source).isDirectory()
 
-const {
-  env: {
-    NODE_ENV = 'production'
+const isLogToFile = () => args.get('logToFile') || false
+const isOpenTools = () => args.get('openTools') || false
+
+function getOutWriteStream (outStreamPath) {
+  const outStream = fs.createWriteStream(outStreamPath, {flags: 'a'})
+
+  if (isLogToFile()) {
+    const {
+      write
+    } = outStream
+
+    outStream.write = (value) => write.call(outStream, stripAnsi(value))
   }
-} = process
+
+  return outStream
+}
+
+function getErrWriteStream (errStreamPath) {
+  const errStream = fs.createWriteStream(errStreamPath, {flags: 'a'})
+
+  if (isLogToFile()) {
+    const {
+      write
+    } = errStream
+
+    errStream.write = (value) => write.call(errStream, stripAnsi(value))
+  }
+
+  return errStream
+}
 
 const {
   app,
@@ -108,7 +137,7 @@ async function createNotificationWindow () {
   notificationWindow.loadFile('notification.html')
   notificationWindow.hide()
 
-  if (NODE_ENV === 'development') notificationWindow.webContents.openDevTools()
+  if (isOpenTools()) notificationWindow.webContents.openDevTools()
 
   app.windows.notificationWindow = notificationWindow
 }
@@ -125,7 +154,7 @@ function createMainWindow () {
   mainWindow.loadFile('index.html')
   mainWindow.show()
 
-  if (NODE_ENV === 'development') mainWindow.webContents.openDevTools()
+  if (isOpenTools()) mainWindow.webContents.openDevTools()
 
   const menu = Menu.buildFromTemplate(TEMPLATE)
   Menu.setApplicationMenu(menu)
@@ -158,7 +187,7 @@ async function runInstallation (name) {
   try {
     await ipcMain.callRenderer(app.windows.installation, name)
   } catch (e) {
-    mainLogger.log(`Process "${name}" failed`)
+    logger.log(`Process "${name}" failed`)
   }
 }
 
@@ -172,7 +201,7 @@ function confirmServiceIsRunning (serviceDetails, i = 0) {
           port
         } = serviceDetails
 
-        mainLogger.log(`"${name}" started on port ${port}`)
+        logger.log(`"${name}" started on port ${port}`)
         if (mainWindow) mainWindow.webContents.executeJavaScript(`listServices('${name}')`)
       })
       .catch(() => {
@@ -198,7 +227,7 @@ async function beforeQuit () {
   app.store.set('ports', {})
 }
 
-const quit = () => mainLogger.log('Goodbye!')
+const quit = () => logger.log('Goodbye!')
 
 const exit = async () => beforeQuit()
 
@@ -243,26 +272,26 @@ function launchApp () {
     serviceDetails.port = port // getPort(service)
     serviceDetails.path = path
 
-    mainLogger.log(`Starting "${service}" on port ${port}`)
+    logger.log(`Starting "${service}" on port ${port}`)
 
     process.env.SERVICE_NAME = service
     process.env.SERVICE_PORT = port
     process.env.SERVICE_PATH = path
 
-    let browserWindow = new BrowserWindow({
+    let runServiceWindow = new BrowserWindow({
       show: false,
       webPreferences: {
         nodeIntegration: true
       }
     })
 
-    browserWindow.loadFile('run-service.html')
-    browserWindow.on('closed', async () => {
-      browserWindow = null
+    runServiceWindow.loadFile('run-service.html')
+    runServiceWindow.on('closed', async () => {
+      runServiceWindow = null
       await app.clearPort(serviceDetails.port)
     })
 
-    serviceDetails.window = browserWindow
+    serviceDetails.window = runServiceWindow
 
     confirmServiceIsRunning(serviceDetails)
   }
@@ -280,7 +309,7 @@ function launchApp () {
         serviceDetails.window.close()
         delete serviceDetails.window
       } catch ({message}) {
-        mainLogger.error(message)
+        logger.error(message)
       }
     }
   }
@@ -293,7 +322,7 @@ function launchApp () {
 
       return !!portProcess
     } catch ({message}) {
-      mainLogger.error(message)
+      logger.error(message)
     }
   }
 
@@ -307,7 +336,7 @@ function launchApp () {
 
       if (pid) execSync(`kill -s 9 ${pid}`)
     } catch ({message}) {
-      mainLogger.error(message)
+      logger.error(message)
     }
   }
 
@@ -373,7 +402,7 @@ async function initialise () {
     try {
       await install()
     } catch (e) {
-      mainLogger.error('Installation failed')
+      logger.error('Installation failed')
     }
   }
 
@@ -383,15 +412,15 @@ async function initialise () {
 const sleep = (t = 3000) => new Promise(resolve => { setTimeout(resolve, t) })
 
 app.on('ready', async () => {
-  mainLogger.log('Hello!')
+  logger.log('Hello!')
 
   try {
     await initialise()
   } catch (e) {
-    mainLogger.error('Initialisation failed')
+    logger.error('Initialisation failed')
   }
 
-  mainLogger.log('Ready!')
+  logger.log('Ready!')
 })
 
 app.notify = async function displayNotification (message, options = {}) {
@@ -411,7 +440,7 @@ app.dismissNotification = async function dismissNotification () {
   if (notificationWindow) notificationWindow.hide()
 }
 
-ipcMain.answerRenderer('setService', () => mainLogger.log('Set service'))
+ipcMain.answerRenderer('setService', () => logger.log('Set service'))
 
 ipcMain.answerRenderer('setServiceProperty', async ({service, property, value}) => {
   services[service] = services[service] || {}
@@ -472,16 +501,23 @@ try {
   if (code !== 'ENOENT') throw e
 }
 
-/*
- *  Redirect `stdout` and `stderr`` to streams
- */
-const outStream = fs.createWriteStream(outStreamPath, {flags: 'a'})
-const errStream = fs.createWriteStream(errStreamPath, {flags: 'a'})
+const outStream = getOutWriteStream(outStreamPath)
+const errStream = getErrWriteStream(errStreamPath)
 
-process.__defineGetter__('stdout', () => outStream)
-process.__defineGetter__('stderr', () => errStream)
+if (app.isPackaged || isLogToFile()) {
+  /*
+   *  Bind console to `outStream` and `errStream`
+   */
+  global.console = new console.Console(outStream, errStream)
 
-mainLogger.log('Waking up ...')
+  /*
+   *  Redirect `stdout` and `stderr`` to streams
+   */
+  process.__defineGetter__('stdout', () => outStream)
+  process.__defineGetter__('stderr', () => errStream)
+}
+
+logger.log('Waking up ...')
 
 const existingServices = getDirectories(app.paths.services)
 
