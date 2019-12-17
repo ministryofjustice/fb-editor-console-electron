@@ -34,6 +34,7 @@
     "Form Builder"
   ],
   "dependencies": {
+    "cross-env": "^6.0.3",
     "electron-better-ipc": "^0.7.0",
     "electron-debug": "^3.0.1",
     "electron-store": "^5.1.0",
@@ -61,7 +62,6 @@
     "chai": "^4.2.0",
     "clean-webpack-plugin": "^3.0.0",
     "concurrently": "^5.0.1",
-    "cross-env": "^6.0.3",
     "cssnano": "^4.1.10",
     "del": "^5.1.0",
     "electron": "^7.1.5",

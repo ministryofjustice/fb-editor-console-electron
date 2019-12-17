@@ -9,10 +9,12 @@ const open = require('open')
 const request = require('request-promise-native')
 const fs = require('fs')
 const git = require('isomorphic-git')
+const logger = require('electron-timber')
+
+const mainLogger = logger.create({name: 'Main'})
 
 git.plugins.set('fs', fs)
 
-const logger = require('electron-timber')
 const {
   ipcMain
 } = require('electron-better-ipc')
@@ -26,10 +28,6 @@ const {
 } = fs
 
 const isDirectory = source => lstatSync(source).isDirectory()
-
-const mainLogger = logger.create({name: 'Main'})
-
-mainLogger.log('Waking up ...')
 
 const {
   env: {
@@ -457,27 +455,33 @@ execSync(`mkdir -p ${formBuilderPath}`)
 execSync(`mkdir -p ${logPath}`)
 execSync(`mkdir -p ${servicesPath}`)
 
-const consoleLogPath = path.join(app.paths.logs, 'fb.console.log')
-const consoleErrPath = path.join(app.paths.logs, 'fb.console.error')
+const outStreamPath = path.join(app.paths.logs, 'form-builder.console.log')
+const errStreamPath = path.join(app.paths.logs, 'form-builder.console.error')
 
 try {
-  fs.unlinkSync(consoleLogPath)
-} catch ({message}) {
-  mainLogger.error(message)
+  fs.unlinkSync(outStreamPath)
+} catch (e) {
+  const {code} = e
+  if (code !== 'ENOENT') throw e
 }
 
 try {
-  fs.unlinkSync(consoleErrPath)
-} catch ({message}) {
-  mainLogger.error(message)
+  fs.unlinkSync(errStreamPath)
+} catch (e) {
+  const {code} = e
+  if (code !== 'ENOENT') throw e
 }
 
-const consoleLog = fs.createWriteStream(consoleLogPath, {flags: 'a'})
-const consoleErr = fs.createWriteStream(consoleErrPath, {flags: 'a'})
+/*
+ *  Redirect `stdout` and `stderr`` to streams
+ */
+const outStream = fs.createWriteStream(outStreamPath, {flags: 'a'})
+const errStream = fs.createWriteStream(errStreamPath, {flags: 'a'})
 
-// redirect stdout / stderr
-process.__defineGetter__('stdout', () => { return consoleLog })
-process.__defineGetter__('stderr', () => { return consoleErr })
+process.__defineGetter__('stdout', () => outStream)
+process.__defineGetter__('stderr', () => errStream)
+
+mainLogger.log('Waking up ...')
 
 const existingServices = getDirectories(app.paths.services)
 
