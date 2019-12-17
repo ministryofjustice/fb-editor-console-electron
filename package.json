@@ -1,6 +1,6 @@
 {
   "name": "@ministryofjustice/fb-editor-console-electron",
-  "version": "0.5.12",
+  "version": "0.5.13",
   "description": "Form Builder Console",
   "main": "./main.js",
   "scripts": {
