@@ -4,9 +4,9 @@
 
 ![Console app](images/console.png)
 
-Desktop application that allows users to run `Form Builder Editor` locally.
+**Form Builder Console** is an Electron app for users to run `Form Builder Editor` locally.
 
-**NB. Currently Mac OS X only**
+(It's currently built for Mac OS X only. [Let us know](mailto:form-builder-team@digital.justice.gov.uk) if you would use it for a different OS.)
 
 ## Installation
 
@@ -14,38 +14,25 @@ The preferred way to install is through the MoJ's `Self Service` application.
 
 Alternatively:
 
-- download the latest release
-- double-click the zip file to expand the app
-- move the app (`Form Builder Console`) to the `Applications` directory
+- Download the latest release
+- Double-click the zip file to expand the app
+- Move the `Form Builder Console` app to the `Applications` directory
 
-[Download](https://github.com/ministryofjustice/fb-editor-console-electron/releases)
+[Releases are available to download from GitHub.](https://github.com/ministryofjustice/fb-editor-console-electron/releases)
 
 ## Usage
 
-Double-click the app's icon.
-
-The first time the Console app is run it will install the Editor and its dependencies.
+Double-click the app's icon. The first time it is run the app will install the Editor and its dependencies.
 
 [Installation problems?](#installation-problems)
 
-## Location of files
+## Creating forms and committing changes
 
-Form Builder Console creates a `formbuilder` directory in the user’s documents directory.
+Forms are created as Git repositories which are cloned to your file system. The repositories contain JSON files which are updated as you make changes to the form in Editor.
 
-Within the `formbuilder` directory, it creates a `forms` directory.
+(In Mac OS you can find the repositories in `/Users/$USER/Documents/formbuilder/forms`.)
 
-On Mac OS X, the forms are located at `/Users/$USER/Documents/formbuilder/forms`
-
-### Committing changes
-
-The Console app does not currently provide a way to automatically commit and/or push your changes - you must use your own Git client.
-
-
-## Building and publishing forms
-
-Read about the `Form Builder Editor` and `Form Builder Publisher`
-
-[User guide](https://fb-user-guide-dev.apps.cloud-platform-live-0.k8s.integration.dsd.io/)
+**Form Builder Console** does not currently provide a way to _commit_ or _push_ those changes - you must use your own Git client.
 
 ## Installation problems
 
@@ -53,13 +40,12 @@ If you encounter a dialog window like this:
 
 <img src="images/installation-blocked.png" alt="Running Console app blocked" width="300" style="max-width: 100%;">
 
-
-- Open `System Preferences` and navigate to the `Security and Privacy` preference pane.
-- Click on `Open Anyway` as shown below
+- Open `System Preferences` and navigate to the `Security and Privacy` preferences pane
+- Click on `Open Anyway`
 
 <img src="images/security-pref-pane--open-anyway.jpg" alt="Open anyway from Security Preference Pane" width="600" style="max-width: 100%;">
 
-*NB. The app is currently unsigned - awaiting an MoJ Apple Developer account to enable this*
+The app is unsigned.
 
 ## License
 

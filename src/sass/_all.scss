@@ -1,0 +1,144 @@
+html.govuk-template {
+  background: #fff;
+}
+
+.govuk-header__product-name {
+  white-space: nowrap;
+}
+
+.govuk-table__row {
+  cursor: pointer;
+}
+
+.js-hidden {
+  display: none;
+}
+
+.govuk-error-message {
+  display: none;
+}
+
+.govuk-form-group--error .govuk-error-message {
+  display: block;
+}
+
+.fb-editor-header {
+  background: #000;
+  color: #fff;
+  border-bottom: solid 10px #28a197;
+  display: table;
+  width: 100%;
+
+  > * {
+    padding: 0.5rem 0.5rem;
+    display: table-cell;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  a {
+    color: #fff;
+  }
+}
+
+.fb-editorheader--branding {
+  width: 1px; /* collapse cell as much as possible */
+  position: relative;
+  top: 0.25rem;
+  padding-right: 2rem;
+}
+
+.fb-editorheader--form {
+  font-weight: normal;
+}
+
+.fb-editorheader--navigation {
+  text-align: right;
+  padding-right: 2rem;
+
+  ul {
+    margin: 0;
+    padding: 0;
+  }
+
+  .govuk-header__link {
+    font-size: 24px;
+    font-weight: normal;
+  }
+}
+
+.adminBack {
+  margin: 0;
+  padding: 0.75rem 1.5rem;
+  border-bottom: solid 1px #b3b9be;
+
+  a {
+    color: #005ea5;
+    &:visited {
+      color: #005ea5;
+    }
+    &::before {
+      content:'‹ ';
+      font-size: 1rem;
+      font-weight: bold;
+    }
+  }
+}
+
+.fb-navigation {
+  background: #f8f8f8;
+  margin: 0;
+  padding: 0 0.5rem;
+  overflow: hidden;
+  border-bottom: solid 1px #b3b9be;
+
+  a { // stylelint-disable-line no-descending-specificity
+    color: #005ea5;
+    text-decoration: none;
+    border-bottom: 0.25rem solid transparent;
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    display: flex;
+  }
+
+  .fb-navigation-current a {
+    color: #005ea5;
+    text-decoration: none;
+    border-bottom: 0.25rem solid #005ea5;
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  li {
+    list-style-type: none;
+
+    &:hover a {
+      color: #2b8cc4;
+      border-bottom-color: #2b8cc4;
+    }
+  }
+}
+
+@media (min-width: 48.0625em) {
+  .govuk-header__content {
+    width: auto;
+    float: right;
+  }
+}
+
+@media (min-width: 40.0625em) {
+  .fb-navigation {
+    li {
+      display: inline-block;
+
+      a {
+        display: inline-block;
+        font-size: 1.1875rem;
+        font-weight: bold;
+      }
+    }
+  }
+}

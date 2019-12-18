@@ -2,3 +2,5 @@ assets
 build
 images
 *.min.js
+*.md
+Form Builder Console-*
