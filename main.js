@@ -31,6 +31,37 @@ const {
   readdirSync
 } = fs
 
+const {
+  app,
+  BrowserWindow,
+  Menu
+} = require('electron')
+
+const TEMPLATE = [
+  {
+    label: 'Application',
+    submenu: [
+      {label: 'About Application', selector: 'orderFrontStandardAboutPanel:'},
+      {type: 'separator'},
+      {label: 'Quit', accelerator: 'Command+Q', click: () => { app.quit() }}
+    ]
+  },
+  {
+    label: 'Edit',
+    submenu: [
+      {label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:'},
+      {label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:'},
+      {type: 'separator'},
+      {label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:'},
+      {label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:'},
+      {label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:'},
+      {label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:'}
+    ]
+  }
+]
+
+const services = {}
+
 const isDirectory = (source) => lstatSync(source).isDirectory()
 
 const isLogToFile = () => args.get('logToFile') || false
@@ -63,50 +94,6 @@ function getErrWriteStream (errStreamPath) {
 
   return errStream
 }
-
-const {
-  app,
-  BrowserWindow,
-  Menu
-} = require('electron')
-
-const TEMPLATE = [
-  {
-    label: 'Application',
-    submenu: [
-      {label: 'About Application', selector: 'orderFrontStandardAboutPanel:'},
-      {type: 'separator'},
-      {label: 'Quit', accelerator: 'Command+Q', click: () => { app.quit() }}
-    ]
-  },
-  {
-    label: 'Edit',
-    submenu: [
-      {label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:'},
-      {label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:'},
-      {type: 'separator'},
-      {label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:'},
-      {label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:'},
-      {label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:'},
-      {label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:'}
-    ]
-  }
-]
-
-const services = {}
-
-app.git = git
-app.utils = {
-  pathExists,
-  isDirectory,
-  glob,
-  request,
-  rimraf
-}
-app.windows = {}
-app.store = store
-app.services = services
-app.paths = {}
 
 const getDirectories = (source) => readdirSync(source).map((name) => path.join(source, name)).filter(isDirectory).map((directory) => path.basename(directory))
 
@@ -413,6 +400,19 @@ async function initialise () {
 
 const sleep = (t = 3000) => new Promise(resolve => { setTimeout(resolve, t) })
 
+app.git = git
+app.utils = {
+  pathExists,
+  isDirectory,
+  glob,
+  request,
+  rimraf
+}
+app.windows = {}
+app.store = store
+app.services = services
+app.paths = {}
+
 app.on('ready', async () => {
   logger.log('Hello!')
 
@@ -442,15 +442,6 @@ app.dismissNotification = async function dismissNotification () {
   if (notificationWindow) notificationWindow.hide()
 }
 
-ipcMain.answerRenderer('setService', () => logger.log('Set service'))
-
-ipcMain.answerRenderer('setServiceProperty', async ({service, property, value}) => {
-  services[service] = services[service] || {}
-  services[service][property] = value
-})
-
-ipcMain.answerRenderer('getServices', () => services)
-
 app.updateEditor = async () => runInstallation('updateEditor')
 
 app.reinstallEditor = async () => runInstallation('reinstallEditor')
@@ -464,6 +455,15 @@ app.setService = (name, params = {}) => {
 app.updateService = (name, params = {}) => {
   services[name] = Object.assign(services[name], params)
 }
+
+ipcMain.answerRenderer('setService', () => logger.log('Set service'))
+
+ipcMain.answerRenderer('setServiceProperty', async ({service, property, value}) => {
+  services[service] = services[service] || {}
+  services[service][property] = value
+})
+
+ipcMain.answerRenderer('getServices', () => services)
 
 {
   const homeDir = path.join(ospath.home(), 'documents')
@@ -488,9 +488,9 @@ app.updateService = (name, params = {}) => {
   execSync(`mkdir -p ${servicesPath}`)
 }
 
-{
-  const outStreamPath = path.join(app.paths.logs, 'form-builder.console.log')
-  const errStreamPath = path.join(app.paths.logs, 'form-builder.console.error')
+if (app.isPackaged || isLogToFile()) {
+  const outStreamPath = path.join(app.paths.logs, 'form-builder.out.log')
+  const errStreamPath = path.join(app.paths.logs, 'form-builder.err.log')
 
   try {
     fs.unlinkSync(outStreamPath)
@@ -509,18 +509,16 @@ app.updateService = (name, params = {}) => {
   const outStream = getOutWriteStream(outStreamPath)
   const errStream = getErrWriteStream(errStreamPath)
 
-  if (app.isPackaged || isLogToFile()) {
   /*
    *  Bind console to `outStream` and `errStream`
    */
-    global.console = new console.Console(outStream, errStream)
+  global.console = new console.Console(outStream, errStream)
 
-    /*
+  /*
    *  Redirect `stdout` and `stderr`` to streams
    */
-    process.__defineGetter__('stdout', () => outStream)
-    process.__defineGetter__('stderr', () => errStream)
-  }
+  process.__defineGetter__('stdout', () => outStream)
+  process.__defineGetter__('stderr', () => errStream)
 }
 
 logger.log('Waking up ...')
