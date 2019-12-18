@@ -11,7 +11,7 @@
     "build:fonts:watch": "npm run gulp -- build:fonts:watch",
     "build:images": "npm run gulp -- build:images",
     "build:images:watch": "npm run gulp -- build:images:watch",
-    "build:js": "cross-env NODE_ENV=production webpack",
+    "build:js": "webpack",
     "build:js:watch": "npm run build:js -- --watch",
     "build:css": "npm run gulp -- build:css",
     "build:css:watch": "npm run gulp -- build:css:watch",
