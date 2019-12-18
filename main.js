@@ -107,6 +107,16 @@ function getNotificationWindow () {
   return notificationWindow
 }
 
+function getInstallationWindow () {
+  const {
+    windows: {
+      installationWindow
+    }
+  } = app
+
+  return installationWindow
+}
+
 function createNotificationWindow () {
   const notificationWindow = new BrowserWindow({
     transparent: true,
@@ -200,11 +210,12 @@ function clearPort (service) {
   app.store.set('ports', ports)
 }
 
-async function runInstallation (name) {
+async function runInstallation (installation) {
   try {
-    await ipcMain.callRenderer(app.windows.installationWindow, name)
+    const installationWindow = getInstallationWindow()
+    if (installationWindow) await ipcMain.callRenderer(installationWindow, installation)
   } catch (e) {
-    logger.log(`Process "${name}" failed`)
+    logger.log(`Process "${installation}" failed`)
   }
 }
 
