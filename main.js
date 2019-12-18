@@ -108,8 +108,6 @@ app.store = store
 app.services = services
 app.paths = {}
 
-let mainWindow
-
 const getDirectories = (source) => readdirSync(source).map((name) => path.join(source, name)).filter(isDirectory).map((directory) => path.basename(directory))
 
 function getNotificationWindow () {
@@ -142,8 +140,27 @@ async function createNotificationWindow () {
   app.windows.notificationWindow = notificationWindow
 }
 
+function createRunServiceWindow (serviceDetails) {
+  const runServiceWindow = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  })
+
+  runServiceWindow.loadFile('run-service.html')
+  runServiceWindow.on('closed', async () => {
+    delete serviceDetails.window
+    await app.clearPort(serviceDetails.port)
+  })
+
+  serviceDetails.window = runServiceWindow
+
+  confirmServiceIsRunning(serviceDetails)
+}
+
 function createMainWindow () {
-  mainWindow = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     show: false,
     webPreferences: {
       nodeIntegration: true
@@ -159,7 +176,7 @@ function createMainWindow () {
   const menu = Menu.buildFromTemplate(TEMPLATE)
   Menu.setApplicationMenu(menu)
 
-  mainWindow.on('closed', () => { mainWindow = null })
+  mainWindow.on('closed', () => { delete app.windows.mainWindow })
 
   /*
    *  Expose a reference
@@ -202,7 +219,7 @@ function confirmServiceIsRunning (serviceDetails, i = 0) {
         } = serviceDetails
 
         logger.log(`"${name}" started on port ${port}`)
-        if (mainWindow) mainWindow.webContents.executeJavaScript(`listServices('${name}')`)
+        if (app.windows.mainWindow) app.windows.mainWindow.webContents.executeJavaScript(`listServices('${name}')`)
       })
       .catch(() => {
         /*
@@ -245,7 +262,7 @@ function launchApp () {
   app.on('activate', () => {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (!mainWindow) createMainWindow()
+    if (!app.windows.mainWindow) createMainWindow()
   })
 
   app.launchService = async (service) => {
@@ -278,22 +295,7 @@ function launchApp () {
     process.env.SERVICE_PORT = port
     process.env.SERVICE_PATH = path
 
-    let runServiceWindow = new BrowserWindow({
-      show: false,
-      webPreferences: {
-        nodeIntegration: true
-      }
-    })
-
-    runServiceWindow.loadFile('run-service.html')
-    runServiceWindow.on('closed', async () => {
-      runServiceWindow = null
-      await app.clearPort(serviceDetails.port)
-    })
-
-    serviceDetails.window = runServiceWindow
-
-    confirmServiceIsRunning(serviceDetails)
+    createRunServiceWindow(serviceDetails)
   }
 
   app.stopService = async (service) => {
@@ -366,7 +368,7 @@ function launchApp () {
 
   // In this file you can include the rest of your app's specific main process
   // code. You can also put them in separate files and require them here.
-  if (!mainWindow) createMainWindow()
+  if (!app.windows.mainWindow) createMainWindow()
 }
 
 async function install () {
@@ -381,7 +383,7 @@ async function install () {
   await app.notify('Editor installation finished', {dismiss: true})
 }
 
-const isProbablyFirstUse = () => !(pathExists.sync(nvsPath) && pathExists.sync(editorPath))
+const isProbablyFirstUse = () => !(pathExists.sync(app.paths.nvs) && pathExists.sync(app.paths.editor))
 
 async function initialise () {
   await createNotificationWindow()
@@ -463,58 +465,62 @@ app.updateService = (name, params = {}) => {
   services[name] = Object.assign(services[name], params)
 }
 
-const homeDir = path.join(ospath.home(), 'documents')
+{
+  const homeDir = path.join(ospath.home(), 'documents')
 
-const formBuilderPath = path.join(homeDir, 'formbuilder')
-app.paths.formbuilder = formBuilderPath
+  const formBuilderPath = path.join(homeDir, 'formbuilder')
+  app.paths.formbuilder = formBuilderPath
 
-const logPath = path.join(formBuilderPath, 'logs')
-app.paths.logs = logPath
+  const logPath = path.join(formBuilderPath, 'logs')
+  app.paths.logs = logPath
 
-const nvsPath = path.join(formBuilderPath, '.nvs')
-app.paths.nvs = nvsPath
+  const nvsPath = path.join(formBuilderPath, '.nvs')
+  app.paths.nvs = nvsPath
 
-const editorPath = path.join(formBuilderPath, '.editor')
-app.paths.editor = editorPath
+  const editorPath = path.join(formBuilderPath, '.editor')
+  app.paths.editor = editorPath
 
-const servicesPath = path.join(formBuilderPath, 'forms')
-app.paths.services = servicesPath
+  const servicesPath = path.join(formBuilderPath, 'forms')
+  app.paths.services = servicesPath
 
-execSync(`mkdir -p ${formBuilderPath}`)
-execSync(`mkdir -p ${logPath}`)
-execSync(`mkdir -p ${servicesPath}`)
-
-const outStreamPath = path.join(app.paths.logs, 'form-builder.console.log')
-const errStreamPath = path.join(app.paths.logs, 'form-builder.console.error')
-
-try {
-  fs.unlinkSync(outStreamPath)
-} catch (e) {
-  const {code} = e
-  if (code !== 'ENOENT') throw e
+  execSync(`mkdir -p ${formBuilderPath}`)
+  execSync(`mkdir -p ${logPath}`)
+  execSync(`mkdir -p ${servicesPath}`)
 }
 
-try {
-  fs.unlinkSync(errStreamPath)
-} catch (e) {
-  const {code} = e
-  if (code !== 'ENOENT') throw e
-}
+{
+  const outStreamPath = path.join(app.paths.logs, 'form-builder.console.log')
+  const errStreamPath = path.join(app.paths.logs, 'form-builder.console.error')
 
-const outStream = getOutWriteStream(outStreamPath)
-const errStream = getErrWriteStream(errStreamPath)
+  try {
+    fs.unlinkSync(outStreamPath)
+  } catch (e) {
+    const {code} = e
+    if (code !== 'ENOENT') throw e
+  }
 
-if (app.isPackaged || isLogToFile()) {
+  try {
+    fs.unlinkSync(errStreamPath)
+  } catch (e) {
+    const {code} = e
+    if (code !== 'ENOENT') throw e
+  }
+
+  const outStream = getOutWriteStream(outStreamPath)
+  const errStream = getErrWriteStream(errStreamPath)
+
+  if (app.isPackaged || isLogToFile()) {
   /*
    *  Bind console to `outStream` and `errStream`
    */
-  global.console = new console.Console(outStream, errStream)
+    global.console = new console.Console(outStream, errStream)
 
-  /*
+    /*
    *  Redirect `stdout` and `stderr`` to streams
    */
-  process.__defineGetter__('stdout', () => outStream)
-  process.__defineGetter__('stderr', () => errStream)
+    process.__defineGetter__('stdout', () => outStream)
+    process.__defineGetter__('stderr', () => errStream)
+  }
 }
 
 logger.log('Waking up ...')
