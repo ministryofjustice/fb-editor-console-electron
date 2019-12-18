@@ -107,7 +107,7 @@ function getNotificationWindow () {
   return notificationWindow
 }
 
-async function createNotificationWindow () {
+function createNotificationWindow () {
   const notificationWindow = new BrowserWindow({
     transparent: true,
     frame: false,
@@ -125,6 +125,19 @@ async function createNotificationWindow () {
   if (isOpenTools()) notificationWindow.webContents.openDevTools()
 
   app.windows.notificationWindow = notificationWindow
+}
+
+function createInstallationWindow () {
+  const installationWindow = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  })
+
+  installationWindow.loadFile('installation.html')
+
+  app.windows.installationWindow = installationWindow
 }
 
 function createRunServiceWindow (serviceDetails) {
@@ -189,7 +202,7 @@ function clearPort (service) {
 
 async function runInstallation (name) {
   try {
-    await ipcMain.callRenderer(app.windows.installation, name)
+    await ipcMain.callRenderer(app.windows.installationWindow, name)
   } catch (e) {
     logger.log(`Process "${name}" failed`)
   }
@@ -373,18 +386,9 @@ async function install () {
 const isProbablyFirstUse = () => !(pathExists.sync(app.paths.nvs) && pathExists.sync(app.paths.editor))
 
 async function initialise () {
-  await createNotificationWindow()
+  createNotificationWindow()
 
-  const installationWindow = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  })
-
-  installationWindow.loadFile('installation.html')
-
-  app.windows.installation = installationWindow
+  createInstallationWindow()
 
   if (isProbablyFirstUse()) {
     await sleep(1000)
