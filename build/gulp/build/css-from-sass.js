@@ -22,7 +22,7 @@ const {
   currentDir,
   sourcePath,
   targetPath
-} = require('~/src/paths');
+} = require('~/build/paths');
 
 const buildSourcePath = path.relative(currentDir, sourcePath);
 const buildTargetPath = path.relative(currentDir, targetPath);

@@ -6,7 +6,7 @@ const {
 } = Module
 
 Module._resolveFilename = function (modulePath, ...args) {
-  if (modulePath === 'electron') return './mock/electron.js'
+  if (modulePath === 'electron') return './test/.mock/electron.js'
   return resolveFilename.call(this, modulePath, ...args)
 }
 
@@ -15,8 +15,8 @@ module.exports = {
     app: {
       isReady: sinon.stub().returns(true),
       store: {
-        get: sinon.stub().returns({}),
-        set: sinon.stub()
+        get () { return {} },
+        set () { }
       }
     },
     getGlobal: sinon.stub().returns({

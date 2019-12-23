@@ -2,7 +2,7 @@ const path = require('path')
 
 const {
   currentDir
-} = require('~/src/paths')
+} = require('~/build/paths')
 
 module.exports = function ({
   code = 'No error code defined',

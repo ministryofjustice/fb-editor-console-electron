@@ -9,9 +9,9 @@ const {
   sourcePath,
   targetPath,
   assetsPath
-} = require('~/src/paths')
+} = require('~/build/paths')
 
-const handleWatchError = require('~/src/gulp/handle-watch-error')
+const handleWatchError = require('~/build/gulp/handle-watch-error')
 
 const buildSourcePath = path.relative(currentDir, sourcePath)
 const buildTargetPath = path.relative(currentDir, targetPath)

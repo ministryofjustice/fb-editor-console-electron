@@ -10,7 +10,7 @@ const TerserPlugin = require('terser-webpack-plugin')
 const {
   sourcePath,
   targetPath
-} = require('~/src/paths')
+} = require('~/build/paths')
 
 const buildSourcePath = path.join(sourcePath, 'js/app.js')
 const buildTargetPath = path.join(targetPath, 'javascripts')
