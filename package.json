@@ -1,6 +1,6 @@
 {
   "name": "@ministryofjustice/fb-editor-console-electron",
-  "version": "0.5.18",
+  "version": "0.5.22",
   "description": "Form Builder Console",
   "main": "./main.js",
   "scripts": {
@@ -37,20 +37,16 @@
     "cross-env": "^6.0.3",
     "electron": "^7.1.7",
     "electron-better-ipc": "^0.7.0",
-    "electron-debug": "^3.0.1",
     "electron-store": "^5.1.0",
     "electron-timber": "^0.5.1",
     "find-process": "^1.4.3",
     "github-api": "^3.3.0",
     "glob": "^7.1.6",
     "govuk-frontend": "^3.4.0",
-    "hostile": "^1.3.2",
     "isomorphic-git": "^0.72.1",
-    "node-notifier": "^6.0.0",
     "open": "^7.0.0",
     "ospath": "^1.2.2",
     "path-exists": "^4.0.0",
-    "request": "^2.88.0",
     "request-promise-native": "^1.0.8",
     "rimraf": "^3.0.0",
     "shelljs": "^0.8.3",
@@ -64,7 +60,7 @@
     "babel-loader": "^8.0.6",
     "chai": "^4.2.0",
     "clean-webpack-plugin": "^3.0.0",
-    "concurrently": "^5.0.1",
+    "concurrently": "^5.0.2",
     "cssnano": "^4.1.10",
     "del": "^5.1.0",
     "electron-packager": "^14.1.1",
@@ -83,20 +79,22 @@
     "postcss-normalize": "^8.0.1",
     "postcss-scss": "^2.0.0",
     "proxyquire": "^2.1.3",
-    "sacred-fs": "^1.0.13",
-    "stylelint": "^12.0.0",
+    "sacred-fs": "^1.0.14",
+    "sinon": "^8.0.2",
     "stylelint": "^12.0.1",
     "stylelint-config-recommended-scss": "^4.1.0",
-    "stylelint-scss": "^3.6.1",
-    "terser-webpack-plugin": "^2.3.0",
+    "stylelint-scss": "^3.13.0",
+    "terser-webpack-plugin": "^2.3.1",
     "vinyl-paths": "^3.0.1",
     "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.2",
-    "webpack-merge": "^4.2.1"
+    "webpack-cli": "^3.3.10",
+    "webpack-merge": "^4.2.2"
   },
   "productName": "Form Builder Console",
   "_moduleAliases": {
-    "~": "."
+    "~": ".",
+    "~/test": "./test",
+    "~/mock": "./test/.mock"
   },
   "husky": {
     "hooks": {

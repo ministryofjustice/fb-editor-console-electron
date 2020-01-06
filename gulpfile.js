@@ -12,7 +12,7 @@ const {
   cssClean: buildCssClean,
   css: buildCss,
   cssWatch: buildCssWatch
-} = require('~/src/gulp/build')
+} = require('./build/gulp/build')
 
 const {
   app: transformApp,
@@ -22,7 +22,7 @@ const {
   notification: transformNotification,
   runService: transformRunService,
   settings: transformSettings
-} = require('~/src/gulp/transform')
+} = require('./build/gulp/transform')
 
 gulp
   .task('build:fonts:clean', buildFontsClean)

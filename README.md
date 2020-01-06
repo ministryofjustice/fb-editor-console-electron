@@ -2,7 +2,7 @@
 
 ## Form Builder Console
 
-![Console app](images/console.png)
+![Console app](documentation/images/console.png)
 
 **Form Builder Console** is an Electron app for users to run `Form Builder Editor` locally.
 
@@ -38,12 +38,12 @@ Forms are created as Git repositories which are cloned to your file system. The 
 
 If you encounter a dialog window like this:
 
-<img src="images/installation-blocked.png" alt="Running Console app blocked" width="300" style="max-width: 100%;">
+![Running Console app blocked](documentation/images/installation-blocked.png)
 
 - Open `System Preferences` and navigate to the `Security and Privacy` preferences pane
 - Click on `Open Anyway`
 
-<img src="images/security-pref-pane--open-anyway.jpg" alt="Open anyway from Security Preference Pane" width="600" style="max-width: 100%;">
+![Open anyway from Security Preference Pane](documentation/images/security-pref-pane--open-anyway.jpg)
 
 The app is unsigned.
 
