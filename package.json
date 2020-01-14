@@ -35,7 +35,7 @@
   ],
   "dependencies": {
     "cross-env": "^6.0.3",
-    "electron-better-ipc": "^0.7.0",
+    "electron-better-ipc": "^0.8.0",
     "electron-store": "^5.1.0",
     "electron-timber": "^0.5.1",
     "find-process": "^1.4.3",
