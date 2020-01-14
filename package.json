@@ -54,7 +54,7 @@
     "yargs-parser": "^16.1.0"
   },
   "devDependencies": {
-    "@ministryofjustice/eslint-config-fb": "^1.1.6",
+    "@ministryofjustice/eslint-config-fb": "^1.1.8",
     "@ministryofjustice/module-alias": "^1.0.9",
     "autoprefixer": "^9.7.3",
     "babel-loader": "^8.0.6",
