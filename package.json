@@ -56,7 +56,7 @@
   "devDependencies": {
     "@ministryofjustice/eslint-config-fb": "^1.1.8",
     "@ministryofjustice/module-alias": "^1.0.9",
-    "autoprefixer": "^9.7.3",
+    "autoprefixer": "^9.7.4",
     "babel-loader": "^8.0.6",
     "chai": "^4.2.0",
     "clean-webpack-plugin": "^3.0.0",
