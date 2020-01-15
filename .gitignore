@@ -57,3 +57,7 @@ jspm_packages
 
 # Husky
 .huskyrc
+
+# Release
+Form.Builder.Console
+Form.Builder.Console.*
