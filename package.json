@@ -42,7 +42,7 @@
     "github-api": "^3.3.0",
     "glob": "^7.1.6",
     "govuk-frontend": "^3.4.0",
-    "isomorphic-git": "^0.75.0",
+    "isomorphic-git": "^0.75.1",
     "open": "^7.0.0",
     "ospath": "^1.2.2",
     "path-exists": "^4.0.0",
