@@ -1,3 +1,5 @@
+@charset "UTF-8";
+
 html {
   line-height: 1.15;
   -ms-text-size-adjust: 100%;
@@ -3407,7 +3409,8 @@ only screen and (min-resolution:192dpi) {
   font-size: 1.125rem;
   line-height: 1;
   display: inline-table;
-  padding-right: 10px
+  padding-right: 10px;
+  white-space: nowrap
 }
 
 @media print {
@@ -6157,62 +6160,139 @@ only screen and (min-resolution:192dpi) {
   }
 }
 
-body,
-html {
-  background: 0 0;
+html.govuk-template {
+  background: #fff
+}
+
+.govuk-table__row {
+  cursor: pointer
+}
+
+.govuk-error-message,
+.js-hidden {
+  display: none
+}
+
+.govuk-form-group--error .govuk-error-message {
+  display: block
+}
+
+.fb-editor-header {
+  background: #000;
+  color: #fff;
+  border-bottom: 10px solid #28a197;
+  display: table;
+  width: 100%
+}
+
+.fb-editor-header > * {
+  padding: .5rem;
+  display: table-cell;
+  vertical-align: middle;
+  white-space: nowrap
+}
+
+.fb-editor-header a {
+  color: #fff
+}
+
+.fb-editorheader--branding {
+  width: 1px;
+  position: relative;
+  top: .25rem;
+  padding-right: 2rem
+}
+
+.fb-editorheader--form {
+  font-weight: 400
+}
+
+.fb-editorheader--navigation {
+  text-align: right;
+  padding-right: 2rem
+}
+
+.fb-editorheader--navigation ul {
   margin: 0;
   padding: 0
 }
 
-.pane {
-  background: #fff;
-  border: 5px solid #000;
-  border-radius: 10px;
-  box-sizing: border-box;
-  width: 400px;
-  height: 200px
+.fb-editorheader--navigation .govuk-header__link {
+  font-size: 24px;
+  font-weight: 400
 }
 
-.pane,
-.pane--body {
-  display: table
+.adminBack {
+  margin: 0;
+  padding: .75rem 1.5rem;
+  border-bottom: 1px solid #b3b9be
 }
 
-.info,
-.spinner {
-  display: table-cell;
-  vertical-align: top;
-  text-align: left;
-  padding: 10px
+.adminBack a,
+.adminBack a:visited {
+  color: #005ea5
 }
 
-.spinner {
-  width: 100px
+.adminBack a:before {
+  content: "‹ ";
+  font-size: 1rem;
+  font-weight: 700
 }
 
-.spinner img {
-  width: 100px;
-  height: 100px;
-  text-align: center
+.fb-navigation {
+  background: #f8f8f8;
+  margin: 0;
+  padding: 0 .5rem;
+  overflow: hidden;
+  border-bottom: 1px solid #b3b9be
 }
 
-#consoleInstallerTitle {
-  margin-bottom: 10px;
-  padding: 5px 10px;
-  background: #000;
-  color: #fff;
-  border-bottom: 5px solid #28a197
+.fb-navigation a {
+  color: #005ea5;
+  text-decoration: none;
+  border-bottom: .25rem solid transparent;
+  padding: .75rem 1rem .5rem
 }
 
-#consoleInstallerTitle span {
-  white-space: nowrap
+.fb-navigation ul {
+  margin: 0;
+  padding: 0;
+  display: -webkit-box;
+  display: flex
 }
 
-.pane--short {
-  height: 100px
+.fb-navigation .fb-navigation-current a {
+  color: #005ea5;
+  text-decoration: none;
+  border-bottom: .25rem solid #005ea5;
+  padding: .75rem 1rem .5rem
 }
 
-.pane--short .pane--header {
-  display: none
+.fb-navigation li {
+  list-style-type: none
 }
-/*# sourceMappingURL=notification-0.5.24.css.map */
+
+.fb-navigation li:hover a {
+  color: #2b8cc4;
+  border-bottom-color: #2b8cc4
+}
+
+@media (min-width:48.0625em) {
+  .govuk-header__content {
+    width: auto;
+    float: right
+  }
+}
+
+@media (min-width:40.0625em) {
+  .fb-navigation li,
+  .fb-navigation li a {
+    display: inline-block
+  }
+
+  .fb-navigation li a {
+    font-size: 1.1875rem;
+    font-weight: 700
+  }
+}
+/*# sourceMappingURL=add-0.5.25.css.map */
