@@ -81,7 +81,7 @@
     "postcss-scss": "^2.0.0",
     "proxyquire": "^2.1.3",
     "sacred-fs": "^1.0.14",
-    "sinon": "^8.1.0",
+    "sinon": "^8.1.1",
     "stylelint": "^13.0.0",
     "stylelint-config-recommended-scss": "^4.1.0",
     "stylelint-scss": "^3.13.0",
