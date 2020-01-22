@@ -41,7 +41,7 @@
     "find-process": "^1.4.3",
     "github-api": "^3.3.0",
     "glob": "^7.1.6",
-    "govuk-frontend": "^3.4.0",
+    "govuk-frontend": "^3.5.0",
     "isomorphic-git": "^0.78.0",
     "open": "^7.0.0",
     "ospath": "^1.2.2",
