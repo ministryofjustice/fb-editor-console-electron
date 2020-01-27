@@ -1,4 +1,4 @@
-const {execSync} = require('child_process')
+const { execSync } = require('child_process')
 const path = require('path')
 const pathExists = require('path-exists')
 const rimraf = require('rimraf')
@@ -15,7 +15,7 @@ const yargsParser = require('yargs-parser')
 
 const args = new Map(Object.entries(yargsParser(process.argv.slice(2))))
 
-logger.setDefaults({logLevel: 'info'})
+logger.setDefaults({ logLevel: 'info' })
 
 git.plugins.set('fs', fs)
 
@@ -41,21 +41,21 @@ const TEMPLATE = [
   {
     label: 'Application',
     submenu: [
-      {label: 'About Application', selector: 'orderFrontStandardAboutPanel:'},
-      {type: 'separator'},
-      {label: 'Quit', accelerator: 'Command+Q', click: () => { app.quit() }}
+      { label: 'About Application', selector: 'orderFrontStandardAboutPanel:' },
+      { type: 'separator' },
+      { label: 'Quit', accelerator: 'Command+Q', click: () => { app.quit() } }
     ]
   },
   {
     label: 'Edit',
     submenu: [
-      {label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:'},
-      {label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:'},
-      {type: 'separator'},
-      {label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:'},
-      {label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:'},
-      {label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:'},
-      {label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:'}
+      { label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:' },
+      { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:' },
+      { type: 'separator' },
+      { label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:' },
+      { label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:' },
+      { label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:' },
+      { label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:' }
     ]
   }
 ]
@@ -68,7 +68,7 @@ const isLogToFile = () => args.get('logToFile') || false
 const isOpenTools = () => args.get('openTools') || false
 
 function getOutWriteStream (outStreamPath) {
-  const outStream = fs.createWriteStream(outStreamPath, {flags: 'a'})
+  const outStream = fs.createWriteStream(outStreamPath, { flags: 'a' })
 
   if (isLogToFile()) {
     const {
@@ -82,7 +82,7 @@ function getOutWriteStream (outStreamPath) {
 }
 
 function getErrWriteStream (errStreamPath) {
-  const errStream = fs.createWriteStream(errStreamPath, {flags: 'a'})
+  const errStream = fs.createWriteStream(errStreamPath, { flags: 'a' })
 
   if (isLogToFile()) {
     const {
@@ -201,7 +201,7 @@ function getPort (service) {
 
 function setPort (service, port) {
   const ports = app.store.get('ports') || {}
-  app.store.set('ports', {...ports, [service]: port})
+  app.store.set('ports', { ...ports, [service]: port })
 }
 
 function clearPort (service) {
@@ -245,7 +245,7 @@ async function beforeQuit () {
   await Promise.all(
     Object
       .entries(services)
-      .filter(([service, {status = 'stopped'}]) => status === 'running')
+      .filter(([service, { status = 'stopped' }]) => status === 'running')
       .map(async ([service]) => {
         await app.stopService(service)
         delete services[service]
@@ -321,7 +321,7 @@ function launchApp () {
       try {
         serviceDetails.window.close()
         delete serviceDetails.window
-      } catch ({message}) {
+      } catch ({ message }) {
         logger.error(message)
       }
     }
@@ -334,7 +334,7 @@ function launchApp () {
       ] = await findProcess('port', port) || []
 
       return !!portProcess
-    } catch ({message}) {
+    } catch ({ message }) {
       logger.error(message)
     }
   }
@@ -348,7 +348,7 @@ function launchApp () {
       ] = await findProcess('port', port) || []
 
       if (pid) execSync(`kill -s 9 ${pid}`)
-    } catch ({message}) {
+    } catch ({ message }) {
       logger.error(message)
     }
   }
@@ -383,15 +383,15 @@ function launchApp () {
 }
 
 async function install () {
-  await app.notify('Starting Editor installation ...', {phase: 'Install Editor'})
+  await app.notify('Starting Editor installation ...', { phase: 'Install Editor' })
 
   await app.installEditor()
 
-  await app.notify('Installing dependencies ...', {phase: 'Install Editor'})
+  await app.notify('Installing dependencies ...', { phase: 'Install Editor' })
 
   app.installEditorDependencies()
 
-  await app.notify('Editor installation finished', {dismiss: true})
+  await app.notify('Editor installation finished', { dismiss: true })
 }
 
 const isProbablyFirstUse = () => !(pathExists.sync(app.paths.nvs) && pathExists.sync(app.paths.editor))
@@ -441,7 +441,7 @@ app.on('ready', async () => {
 })
 
 app.notify = async function displayNotification (message, options = {}) {
-  const params = typeof message === 'object' ? message : Object.assign(options, {message})
+  const params = typeof message === 'object' ? message : Object.assign(options, { message })
 
   const notificationWindow = getNotificationWindow()
   if (notificationWindow) {
@@ -451,7 +451,7 @@ app.notify = async function displayNotification (message, options = {}) {
 }
 
 app.dismissNotification = async function dismissNotification () {
-  await app.notify({dismiss: true})
+  await app.notify({ dismiss: true })
 
   const notificationWindow = getNotificationWindow()
   if (notificationWindow) notificationWindow.hide()
@@ -473,7 +473,7 @@ app.updateService = (name, params = {}) => {
 
 ipcMain.answerRenderer('setService', () => logger.log('Set service'))
 
-ipcMain.answerRenderer('setServiceProperty', async ({service, property, value}) => {
+ipcMain.answerRenderer('setServiceProperty', async ({ service, property, value }) => {
   services[service] = services[service] || {}
   services[service][property] = value
 })
@@ -510,14 +510,14 @@ if (app.isPackaged || isLogToFile()) {
   try {
     fs.unlinkSync(outStreamPath)
   } catch (e) {
-    const {code} = e
+    const { code } = e
     if (code !== 'ENOENT') throw e
   }
 
   try {
     fs.unlinkSync(errStreamPath)
   } catch (e) {
-    const {code} = e
+    const { code } = e
     if (code !== 'ENOENT') throw e
   }
 

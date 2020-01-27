@@ -1,7 +1,7 @@
 require('@ministryofjustice/module-alias/register')
 
 const path = require('path')
-const {CleanWebpackPlugin} = require('clean-webpack-plugin')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const {
   EnvironmentPlugin
 } = require('webpack')
@@ -15,7 +15,7 @@ const {
 const buildSourcePath = path.join(sourcePath, 'js/app.js')
 const buildTargetPath = path.join(targetPath, 'javascripts')
 
-const {version} = require('~/package')
+const { version } = require('~/package')
 
 module.exports = () => ({
   mode: 'production',
@@ -51,6 +51,6 @@ module.exports = () => ({
         buildTargetPath.concat('/*.js.map')
       ]
     }),
-    new EnvironmentPlugin({NODE_ENV: 'production'})
+    new EnvironmentPlugin({ NODE_ENV: 'production' })
   ]
 })
