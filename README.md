@@ -20,11 +20,11 @@ Alternatively:
 
 [Releases are available to download from GitHub.](https://github.com/ministryofjustice/fb-editor-console-electron/releases)
 
+The app is signed by [Sequence Media Limited](https://github.com/sequencemedia) on behalf of the Ministry of Justice.
+
 ## Usage
 
 Double-click the app's icon. The first time it is run the app will install the Editor and its dependencies.
-
-[Installation problems?](#installation-problems)
 
 ## Creating forms and committing changes
 
@@ -33,19 +33,6 @@ Forms are created as Git repositories which are cloned to your file system. The 
 (In Mac OS you can find the repositories in `/Users/$USER/Documents/formbuilder/forms`.)
 
 **Form Builder Console** does not currently provide a way to _commit_ or _push_ those changes - you must use your own Git client.
-
-## Installation problems
-
-If you encounter a dialog window like this:
-
-![Running Console app blocked](documentation/images/installation-blocked.png)
-
-- Open `System Preferences` and navigate to the `Security and Privacy` preferences pane
-- Click on `Open Anyway`
-
-![Open anyway from Security Preference Pane](documentation/images/security-pref-pane--open-anyway.jpg)
-
-The app is unsigned.
 
 ## License
 
