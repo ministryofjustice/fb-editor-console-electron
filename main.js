@@ -61,6 +61,7 @@ const TEMPLATE = [
 ]
 
 const services = {}
+const serviceWindows = {}
 
 const isDirectory = (source) => lstatSync(source).isDirectory()
 
@@ -150,7 +151,7 @@ function createInstallationWindow () {
   app.windows.installationWindow = installationWindow
 }
 
-function createRunServiceWindow (serviceDetails) {
+function createRunServiceWindow (service, { port }) {
   const runServiceWindow = new BrowserWindow({
     show: false,
     webPreferences: {
@@ -160,13 +161,11 @@ function createRunServiceWindow (serviceDetails) {
 
   runServiceWindow.loadFile('run-service.html')
   runServiceWindow.on('closed', async () => {
-    delete serviceDetails.window
-    await app.clearPort(serviceDetails.port)
+    delete serviceWindows[service]
+    await app.clearPort(port)
   })
 
-  serviceDetails.window = runServiceWindow
-
-  confirmServiceIsRunning(serviceDetails)
+  serviceWindows[service] = runServiceWindow
 }
 
 function createMainWindow () {
@@ -214,8 +213,8 @@ async function runInstallation (installation) {
   try {
     const installationWindow = getInstallationWindow()
     if (installationWindow) await ipcMain.callRenderer(installationWindow, installation)
-  } catch (e) {
-    logger.log(`Process "${installation}" failed`)
+  } catch ({ message }) {
+    logger.log(`Process "${installation}" failed (${message})`)
   }
 }
 
@@ -306,7 +305,8 @@ function launchApp () {
     process.env.SERVICE_PORT = port
     process.env.SERVICE_PATH = path
 
-    createRunServiceWindow(serviceDetails)
+    createRunServiceWindow(service, serviceDetails)
+    confirmServiceIsRunning(serviceDetails)
   }
 
   app.stopService = async (service) => {
@@ -317,10 +317,12 @@ function launchApp () {
 
     clearPort(service)
 
-    if (serviceDetails.window) {
+    const serviceWindow = serviceWindows[service]
+
+    if (serviceWindow) {
       try {
-        serviceDetails.window.close()
-        delete serviceDetails.window
+        serviceWindow.close()
+        delete serviceWindows[service]
       } catch ({ message }) {
         logger.error(message)
       }
@@ -405,8 +407,8 @@ async function initialise () {
     await sleep(1000)
     try {
       await install()
-    } catch (e) {
-      logger.error('Installation failed')
+    } catch ({ message }) {
+      logger.error(`Installation failed (${message})`)
     }
   }
 
@@ -428,13 +430,16 @@ app.store = store
 app.services = services
 app.paths = {}
 
+// https://github.com/electron/electron/issues/18397
+app.allowRendererProcessReuse = true
+
 app.on('ready', async () => {
   logger.log('Hello!')
 
   try {
     await initialise()
-  } catch (e) {
-    logger.error('Initialisation failed')
+  } catch ({ message }) {
+    logger.error(`Initialisation failed (${message})`)
   }
 
   logger.log('Ready!')

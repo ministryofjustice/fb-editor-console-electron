@@ -1564,7 +1564,6 @@ template {
   width: 7px;
   height: 7px;
   margin: auto 0;
-  -webkit-transform: rotate(45deg);
   transform: rotate(45deg);
   border: solid;
   border-width: 1px 1px 0 0;
@@ -1792,10 +1791,8 @@ template {
   font-weight: 700;
   font-size: 1.125rem;
   line-height: 1;
-  display: -webkit-inline-box;
   display: inline-flex;
   min-height: auto;
-  -webkit-box-pack: center;
   justify-content: center
 }
 
@@ -2317,7 +2314,6 @@ template {
   left: 9px;
   width: 18px;
   height: 7px;
-  -webkit-transform: rotate(-45deg);
   transform: rotate(-45deg);
   border: solid;
   border-width: 0 0 5px 5px;
@@ -3147,14 +3143,11 @@ template {
 }
 
 .govuk-footer__meta {
-  display: -webkit-box;
   display: flex;
   margin-right: -15px;
   margin-left: -15px;
   flex-wrap: wrap;
-  -webkit-box-align: end;
   align-items: flex-end;
-  -webkit-box-pack: center;
   justify-content: center
 }
 
@@ -3165,7 +3158,6 @@ template {
 }
 
 .govuk-footer__meta-item--grow {
-  -webkit-box-flex: 1;
   flex: 1
 }
 
@@ -3248,7 +3240,6 @@ only screen and (min-resolution:192dpi) {
 }
 
 .govuk-footer__navigation {
-  display: -webkit-box;
   display: flex;
   margin-right: -15px;
   margin-left: -15px;
@@ -3261,7 +3252,6 @@ only screen and (min-resolution:192dpi) {
   margin-bottom: 30px;
   margin-left: 15px;
   vertical-align: top;
-  -webkit-box-flex: 1;
   flex-grow: 1;
   flex-shrink: 1
 }
@@ -3274,7 +3264,6 @@ only screen and (min-resolution:192dpi) {
 
 @media (min-width:48.0625em) {
   .govuk-footer__section:first-child:nth-last-child(2) {
-    -webkit-box-flex: 2;
     flex-grow: 2
   }
 }
