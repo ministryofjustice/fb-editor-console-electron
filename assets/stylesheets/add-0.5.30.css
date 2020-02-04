@@ -1566,7 +1566,6 @@ template {
   width: 7px;
   height: 7px;
   margin: auto 0;
-  -webkit-transform: rotate(45deg);
   transform: rotate(45deg);
   border: solid;
   border-width: 1px 1px 0 0;
@@ -1794,10 +1793,8 @@ template {
   font-weight: 700;
   font-size: 1.125rem;
   line-height: 1;
-  display: -webkit-inline-box;
   display: inline-flex;
   min-height: auto;
-  -webkit-box-pack: center;
   justify-content: center
 }
 
@@ -2319,7 +2316,6 @@ template {
   left: 9px;
   width: 18px;
   height: 7px;
-  -webkit-transform: rotate(-45deg);
   transform: rotate(-45deg);
   border: solid;
   border-width: 0 0 5px 5px;
@@ -3149,14 +3145,11 @@ template {
 }
 
 .govuk-footer__meta {
-  display: -webkit-box;
   display: flex;
   margin-right: -15px;
   margin-left: -15px;
   flex-wrap: wrap;
-  -webkit-box-align: end;
   align-items: flex-end;
-  -webkit-box-pack: center;
   justify-content: center
 }
 
@@ -3167,7 +3160,6 @@ template {
 }
 
 .govuk-footer__meta-item--grow {
-  -webkit-box-flex: 1;
   flex: 1
 }
 
@@ -3250,7 +3242,6 @@ only screen and (min-resolution:192dpi) {
 }
 
 .govuk-footer__navigation {
-  display: -webkit-box;
   display: flex;
   margin-right: -15px;
   margin-left: -15px;
@@ -3263,7 +3254,6 @@ only screen and (min-resolution:192dpi) {
   margin-bottom: 30px;
   margin-left: 15px;
   vertical-align: top;
-  -webkit-box-flex: 1;
   flex-grow: 1;
   flex-shrink: 1
 }
@@ -3276,7 +3266,6 @@ only screen and (min-resolution:192dpi) {
 
 @media (min-width:48.0625em) {
   .govuk-footer__section:first-child:nth-last-child(2) {
-    -webkit-box-flex: 2;
     flex-grow: 2
   }
 }
@@ -6248,7 +6237,6 @@ html.govuk-template {
 .fb-navigation ul {
   margin: 0;
   padding: 0;
-  display: -webkit-box;
   display: flex
 }
 
@@ -6286,39 +6274,4 @@ html.govuk-template {
     font-weight: 700
   }
 }
-
-.cell-nowrap a {
-  display: block
-}
-
-.cell-nowrap .hidden {
-  display: none
-}
-
-.invisible {
-  visibility: hidden
-}
-
-.formStatus {
-  display: inline-block;
-  padding: .25em .5em;
-  color: #000;
-  background-color: #fff;
-  border: 1px solid #000;
-  font-size: 12px;
-  text-transform: uppercase;
-  cursor: default;
-  min-width: 5rem;
-  text-align: center
-}
-
-.formStatus--starting {
-  background-color: #ffbf47
-}
-
-.formStatus--running {
-  background-color: #006435;
-  border-color: #006435;
-  color: #fff
-}
-/*# sourceMappingURL=app-0.5.29.css.map */
+/*# sourceMappingURL=add-0.5.30.css.map */
