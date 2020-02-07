@@ -118,6 +118,42 @@ function getInstallationWindow () {
   return installationWindow
 }
 
+function createPasswordModal () {
+  const {
+    windows: {
+      mainWindow
+    }
+  } = app
+
+  const passwordModal = new BrowserWindow({
+    width: 400,
+    frame: false, /*
+    toolbar: false */
+    parent: mainWindow,
+    modal: true /* ,
+    webPreferences: {
+      nodeIntegration: true
+    } */
+  })
+
+  passwordModal.on('blur', () => passwordModal.focus())
+  passwordModal.loadFile('password.html')
+  passwordModal.hide()
+
+  /*
+  passwordModal.on('closed', async () => {
+    // delete app.windows.passwordModal
+
+    logger.log('CLOSE CLOSE CLOSE')
+  })
+  */
+
+  /*
+   *  Expose a reference
+   */
+  app.windows.passwordModal = passwordModal
+}
+
 function createNotificationWindow () {
   const notificationWindow = new BrowserWindow({
     transparent: true,
@@ -403,6 +439,8 @@ async function initialise () {
 
   createInstallationWindow()
 
+  createPasswordModal()
+
   if (isProbablyFirstUse()) {
     await sleep(1000)
     try {
@@ -499,6 +537,9 @@ ipcMain.answerRenderer('getServices', () => services)
 
   const editorPath = path.join(formBuilderPath, '.editor')
   app.paths.editor = editorPath
+
+  const tokenPath = path.join(formBuilderPath, '.token')
+  app.paths.token = tokenPath
 
   const servicesPath = path.join(formBuilderPath, 'forms')
   app.paths.services = servicesPath

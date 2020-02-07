@@ -43,7 +43,7 @@
   <body class="govuk-template__body">
     <script>
       document.body.className = document.body.className
-        ? `${document.body.className.trim()} js-enabled`
+        ? `${document.body.className.trim()} js-enabled`.trim()
         : 'js-enabled'
     </script>
 
@@ -165,11 +165,13 @@
                   </label>
                 </div>
               </div>
+
               <p id="gitInstructions">
-                If you want to create a github repository for the form at the
-                same time, please add your github details in
+                If you want to create a GitHub repository for the form at the
+                same time, please add your GitHub details in
                 <a href="settings.html">settings</a>
               </p>
+
               <button type="submit" class="govuk-button" id="createForm">
                 Create form
               </button>
