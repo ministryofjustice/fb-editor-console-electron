@@ -24,7 +24,7 @@
     "test": "mocha test --recursive --require @ministryofjustice/module-alias/register",
     "transform": "npm run gulp -- transform",
     "gulp": "gulp --color",
-    "pre-commit": "npm run test && npm run build && npm run transform && git add assets *.html"
+    "pre-commit": "npm run test && npm run lint && npm run build && npm run transform && git add assets *.html"
   },
   "author": "Form Builder Team <form-builder-team@digital.justice.gov.uk>",
   "repository": "https://github.com/ministryofjustice/fb-editor-console-electron",
