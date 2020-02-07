@@ -274,7 +274,11 @@
       /*
        *  App
        */
-      const { app } = require('./lib/app')
+      const {
+        remote: {
+          app
+        }
+      } = require('electron')
 
       global.app = app
 

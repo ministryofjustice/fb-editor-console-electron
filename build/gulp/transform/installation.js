@@ -9,7 +9,7 @@ const {
   currentDir
 } = require('~/build/paths')
 
-const {version} = require('~/package')
+const { version } = require('~/package')
 
 const JAVASCRIPTS = /(assets\/javascripts\/app-).*(.js)/g
 const STYLESHEETS = /(assets\/stylesheets\/installation-).*(.css)/g

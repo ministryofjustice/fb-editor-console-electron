@@ -1,280 +1,62 @@
+require('@ministryofjustice/module-alias/register')
+
 const { execSync } = require('child_process')
 const path = require('path')
-const pathExists = require('path-exists')
 const rimraf = require('rimraf')
 const ospath = require('ospath')
 const findProcess = require('find-process')
-const glob = require('glob')
 const open = require('open')
-const request = require('request-promise-native')
 const fs = require('fs')
 const git = require('isomorphic-git')
+
+const {
+  app
+} = require('electron')
+
 const logger = require('electron-timber')
-const stripAnsi = require('strip-ansi')
-const yargsParser = require('yargs-parser')
-
-const args = new Map(Object.entries(yargsParser(process.argv.slice(2))))
-
-logger.setDefaults({ logLevel: 'info' })
-
-git.plugins.set('fs', fs)
 
 const {
   ipcMain
 } = require('electron-better-ipc')
 
 const Store = require('electron-store')
+
+const {
+  getDirectories,
+  isLogToFile,
+  isProbablyFirstUse
+} = require('./lib/common')
+
+const {
+  getOutWriteStream,
+  getErrWriteStream
+} = require('./lib/common/write-stream')
+
 const store = new Store()
 
-const {
-  lstatSync,
-  readdirSync
-} = fs
+logger.setDefaults({ logLevel: 'info' })
 
-const {
-  app,
-  BrowserWindow,
-  Menu
-} = require('electron')
+git.plugins.set('fs', fs)
 
-const TEMPLATE = [
-  {
-    label: 'Application',
-    submenu: [
-      { label: 'About Application', selector: 'orderFrontStandardAboutPanel:' },
-      { type: 'separator' },
-      { label: 'Quit', accelerator: 'Command+Q', click: () => { app.quit() } }
-    ]
-  },
-  {
-    label: 'Edit',
-    submenu: [
-      { label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:' },
-      { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:' },
-      { type: 'separator' },
-      { label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:' },
-      { label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:' },
-      { label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:' },
-      { label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:' }
-    ]
-  }
-]
-
+const windows = {}
 const services = {}
 const serviceWindows = {}
+const paths = {}
 
-const isDirectory = (source) => lstatSync(source).isDirectory()
-
-const isLogToFile = () => args.get('logToFile') || false
-const isOpenTools = () => args.get('openTools') || false
-
-function getOutWriteStream (outStreamPath) {
-  const outStream = fs.createWriteStream(outStreamPath, { flags: 'a' })
-
-  if (isLogToFile()) {
-    const {
-      write
-    } = outStream
-
-    outStream.write = (value) => write.call(outStream, stripAnsi(value))
-  }
-
-  return outStream
-}
-
-function getErrWriteStream (errStreamPath) {
-  const errStream = fs.createWriteStream(errStreamPath, { flags: 'a' })
-
-  if (isLogToFile()) {
-    const {
-      write
-    } = errStream
-
-    errStream.write = (value) => write.call(errStream, stripAnsi(value))
-  }
-
-  return errStream
-}
-
-const getDirectories = (source) => readdirSync(source).map((name) => path.join(source, name)).filter(isDirectory).map((directory) => path.basename(directory))
-
-function getNotificationWindow () {
-  const {
-    windows: {
-      notificationWindow
-    }
-  } = app
-
-  return notificationWindow
-}
-
-function getInstallationWindow () {
-  const {
-    windows: {
-      installationWindow
-    }
-  } = app
-
-  return installationWindow
-}
-
-function createPasswordModal () {
-  const {
-    windows: {
-      mainWindow
-    }
-  } = app
-
-  const passwordModal = new BrowserWindow({
-    width: 400,
-    frame: false, /*
-    toolbar: false */
-    parent: mainWindow,
-    modal: true /* ,
-    webPreferences: {
-      nodeIntegration: true
-    } */
-  })
-
-  passwordModal.on('blur', () => passwordModal.focus())
-  passwordModal.loadFile('password.html')
-  passwordModal.hide()
-
-  /*
-  passwordModal.on('closed', async () => {
-    // delete app.windows.passwordModal
-
-    logger.log('CLOSE CLOSE CLOSE')
-  })
-  */
-
-  /*
-   *  Expose a reference
-   */
-  app.windows.passwordModal = passwordModal
-}
-
-function createNotificationWindow () {
-  const notificationWindow = new BrowserWindow({
-    transparent: true,
-    frame: false,
-    toolbar: false,
-    width: 400,
-    height: isProbablyFirstUse() ? 200 : 134,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  })
-  notificationWindow.on('blur', () => notificationWindow.focus())
-  notificationWindow.loadFile('notification.html')
-  notificationWindow.hide()
-
-  if (isOpenTools()) notificationWindow.webContents.openDevTools()
-
-  app.windows.notificationWindow = notificationWindow
-}
-
-function createInstallationWindow () {
-  const installationWindow = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  })
-
-  installationWindow.loadFile('installation.html')
-
-  app.windows.installationWindow = installationWindow
-}
-
-function createRunServiceWindow (service, { port }) {
-  const runServiceWindow = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  })
-
-  runServiceWindow.loadFile('run-service.html')
-  runServiceWindow.on('closed', async () => {
-    delete serviceWindows[service]
-    await app.clearPort(port)
-  })
-
-  serviceWindows[service] = runServiceWindow
-}
-
-function createMainWindow () {
-  const mainWindow = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  })
-
-  mainWindow.maximize()
-  mainWindow.loadFile('index.html')
-  mainWindow.show()
-
-  if (isOpenTools()) mainWindow.webContents.openDevTools()
-
-  const menu = Menu.buildFromTemplate(TEMPLATE)
-  Menu.setApplicationMenu(menu)
-
-  mainWindow.on('closed', () => { delete app.windows.mainWindow })
-
-  /*
-   *  Expose a reference
-   */
-  app.windows.mainWindow = mainWindow
-}
-
-function getPort (service) {
-  const ports = app.store.get('ports') || {}
-  return ports[service]
-}
-
-function setPort (service, port) {
-  const ports = app.store.get('ports') || {}
-  app.store.set('ports', { ...ports, [service]: port })
-}
-
-function clearPort (service) {
-  const ports = app.store.get('ports') || {}
-  delete ports[service]
-  app.store.set('ports', ports)
-}
-
-async function runInstallation (installation) {
-  try {
-    const installationWindow = getInstallationWindow()
-    if (installationWindow) await ipcMain.callRenderer(installationWindow, installation)
-  } catch ({ message }) {
-    logger.log(`Process "${installation}" failed (${message})`)
-  }
-}
-
-function confirmServiceIsRunning (serviceDetails, i = 0) {
-  setTimeout(() => {
-    request.get(`http://localhost:${serviceDetails.port}`)
-      .then(() => {
-        serviceDetails.status = 'running'
-        const {
-          name,
-          port
-        } = serviceDetails
-
-        logger.log(`"${name}" started on port ${port}`)
-        if (app.windows.mainWindow) app.windows.mainWindow.webContents.executeJavaScript(`listServices('${name}')`)
-      })
-      .catch(() => {
-        /*
-         *  Let's not do this indefinitely
-         */
-        if (i++ < 1000) confirmServiceIsRunning(serviceDetails, i)
-      })
-  }, 250)
-}
+const {
+  getMainWindow,
+  createNotificationWindow,
+  createInstallationWindow,
+  createRunServiceWindow,
+  createMainWindow,
+  getPort,
+  setPort,
+  clearPort,
+  confirmServiceIsRunning,
+  install,
+  displayNotification,
+  dismissNotification
+} = require('./lib/main')
 
 async function beforeQuit () {
   await Promise.all(
@@ -287,7 +69,7 @@ async function beforeQuit () {
       })
   )
 
-  app.store.set('ports', {})
+  store.set('ports', {})
 }
 
 const quit = () => logger.log('Goodbye!')
@@ -320,7 +102,7 @@ function launchApp () {
 
     serviceDetails.status = 'starting'
 
-    const ports = app.store.get('ports') || {}
+    const ports = store.get('ports') || {}
     const usedPorts = Object.values(ports)
 
     let port = 52000
@@ -341,7 +123,7 @@ function launchApp () {
     process.env.SERVICE_PORT = port
     process.env.SERVICE_PATH = path
 
-    createRunServiceWindow(service, serviceDetails)
+    createRunServiceWindow(service, serviceWindows, serviceDetails)
     confirmServiceIsRunning(serviceDetails)
   }
 
@@ -403,12 +185,12 @@ function launchApp () {
 
     rimraf.sync(servicePath)
 
-    const ports = app.store.get('ports')
+    const ports = store.get('ports')
 
     delete ports[serviceName]
     delete services[serviceName]
 
-    app.store.set('ports', ports)
+    store.set('ports', ports)
   }
 
   app.openExternal = async (url) => {
@@ -417,31 +199,17 @@ function launchApp () {
 
   // In this file you can include the rest of your app's specific main process
   // code. You can also put them in separate files and require them here.
-  if (!app.windows.mainWindow) createMainWindow()
+
+  const mainWindow = getMainWindow()
+  if (!mainWindow) createMainWindow()
 }
-
-async function install () {
-  await app.notify('Starting Editor installation ...', { phase: 'Install Editor' })
-
-  await app.installEditor()
-
-  await app.notify('Installing dependencies ...', { phase: 'Install Editor' })
-
-  app.installEditorDependencies()
-
-  await app.notify('Editor installation finished', { dismiss: true })
-}
-
-const isProbablyFirstUse = () => !(pathExists.sync(app.paths.nvs) && pathExists.sync(app.paths.editor))
 
 async function initialise () {
   createNotificationWindow()
 
   createInstallationWindow()
 
-  createPasswordModal()
-
-  if (isProbablyFirstUse()) {
+  if (isProbablyFirstUse(app)) {
     await sleep(1000)
     try {
       await install()
@@ -456,17 +224,10 @@ async function initialise () {
 const sleep = (t = 3000) => new Promise(resolve => { setTimeout(resolve, t) })
 
 app.git = git
-app.utils = {
-  pathExists,
-  isDirectory,
-  glob,
-  request,
-  rimraf
-}
-app.windows = {}
 app.store = store
+app.windows = windows
 app.services = services
-app.paths = {}
+app.paths = paths
 
 // https://github.com/electron/electron/issues/18397
 app.allowRendererProcessReuse = true
@@ -483,28 +244,8 @@ app.on('ready', async () => {
   logger.log('Ready!')
 })
 
-app.notify = async function displayNotification (message, options = {}) {
-  const params = typeof message === 'object' ? message : Object.assign(options, { message })
-
-  const notificationWindow = getNotificationWindow()
-  if (notificationWindow) {
-    notificationWindow.show()
-    await ipcMain.callRenderer(notificationWindow, 'send-notification', params)
-  }
-}
-
-app.dismissNotification = async function dismissNotification () {
-  await app.notify({ dismiss: true })
-
-  const notificationWindow = getNotificationWindow()
-  if (notificationWindow) notificationWindow.hide()
-}
-
-app.updateEditor = async () => runInstallation('updateEditor')
-
-app.reinstallEditor = async () => runInstallation('reinstallEditor')
-
-app.installEditor = async () => runInstallation('installEditor')
+app.displayNotification = displayNotification
+app.dismissNotification = dismissNotification
 
 app.setService = (name, params = {}) => {
   services[name] = params
