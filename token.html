@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" class="govuk-template">
   <head>
-    <title>Form Builder - Forms</title>
+    <title>Form Builder - Settings - GitHub Personal Access Token - Password</title>
 
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -41,13 +41,13 @@
       rel="apple-touch-icon"
       href="assets/images/govuk-apple-touch-icon.png"
     />
-    <link rel="stylesheet" href="assets/stylesheets/app-0.5.30.css" />
+    <link rel="stylesheet" href="assets/stylesheets/token-0.5.30.css" />
     <meta
       property="og:image"
       content="assets/images/govuk-opengraph-image.png"
     />
   </head>
-  <body class="govuk-template__body">
+    <body class="govuk-template__body">
     <script>
       document.body.className = document.body.className
         ? `${document.body.className.trim()} js-enabled`.trim()
@@ -96,8 +96,9 @@
         </div>
         <nav class="fb-editorheader--navigation">
           <ul>
-            <li class="govuk-header__navigation-item">
-              <a class="govuk-header__link" href="./settings.html">Settings</a>
+            <li
+              class="govuk-header__navigation-item govuk-header__navigation-item--active">
+              <a class="govuk-header__link" href="./settings.html#git-auth">Settings</a>
             </li>
           </ul>
         </nav>
@@ -105,9 +106,7 @@
 
       <nav class="fb-navigation">
         <ul>
-          <li class="govuk-link fb-navigation-current">
-            <a href="./index.html">Forms</a>
-          </li>
+          <li class="govuk-link"><a href="./index.html">Forms</a></li>
           <li class="govuk-link"><a href="./add.html">Add an existing form</a></li>
           <li class="govuk-link"><a href="./create.html">Create a form</a></li>
         </ul>
@@ -115,62 +114,83 @@
     </header>
 
     <div class="govuk-width-container govuk-body-m">
+      <a href="./settings.html#git-auth" class="govuk-back-link">Back</a>
+
       <main class="govuk-main-wrapper" id="main-content" role="main">
-        <div class="govuk-grid-row">
-          <div class="govuk-grid-column-full-width">
-            <h1 class="govuk-heading-xl">Forms</h1>
-            <p id="formsInstructions">
-              Please
-              <a class="govuk-link" href="settings.html">add your github details</a>
-            </p>
+        <div
+          class="govuk-error-summary js-hidden"
+          aria-labelledby="error-summary-title"
+          role="alert"
+          tabindex="-1"
+          data-module="error-summary">
+          <h2 class="govuk-error-summary__title" id="error-summary-title">
+            There is a problem
+          </h2>
+          <div class="govuk-error-summary__body">
+            <ul class="govuk-list govuk-error-summary__list">
+              <li class="personal-access-token-summary js-hidden">
+                <a href="#personal-access-token">
+                  Enter a personal access token
+                </a>
+              </li>
 
-            <table class="govuk-table">
-              <caption class="govuk-table__caption govuk-visually-hidden">
-                List of forms
-              </caption>
-              <tbody class="govuk-table__body" id="services">
-                <!-- generated list of forms -->
-              </tbody>
-            </table>
+              <li class="access-token-password-summary js-hidden">
+                <a href="#access-token-password">
+                  Enter an access token password
+                </a>
+              </li>
 
-            <p id="servicesInstructions">
-              You don’t have any forms yet.
-              <a class="govuk-link" href="./create.html">Create a new form</a>
-              or <a class="govuk-link" href="./add.html">add an existing one</a>
-            </p>
+              <li class="token-file-summary js-hidden">
+                The token could not be saved. Try again, or <a href="mailto:form-builder-team@digital.justice.gov.uk?subject=Editor Console token file could not be saved">contact us</a>
+              </li>
+            </ul>
           </div>
         </div>
+
+        <h1 class="govuk-heading-xl">Token and password</h1>
+
+        <form id="token-form" method="post" action="./settings.html">
+          <div class="govuk-form-group personal-access-token-group">
+            <label class="govuk-label" for="personal-access-token">GitHub personal access token</label>
+            <span id="personal-access-token-error" class="govuk-error-message">Enter a personal access token</span>
+            <input class="govuk-input govuk-!-width-two-thirds" type="text" id="personal-access-token" name="personal-access-token" />
+          </div>
+
+          <div class="govuk-form-group access-token-password-group">
+            <label class="govuk-label" for="access-token-password">Access token password</label>
+            <span id="access-token-password-error" class="govuk-error-message">Enter an access token password</span>
+            <input class="govuk-input govuk-input--width-10" type="text" id="access-token-password" name="access-token-password" />
+          </div>
+
+          <button class="govuk-button" data-module="govuk-button" type="submit" id="save-user-settings">Save</button>
+        </form>
+
+        <div class="govuk-inset-text">
+          <h3>About the GitHub personal access token</h3>
+          <p>
+            Your access token should be created with the
+            <b>public_repo</b> scope.
+          </p>
+          <a id="token-how-to" href="#">How to create a GitHub access token</a>
+        </div>
+
+        <div class="govuk-inset-text">
+          <h3>About the access token password</h3>
+          <p>
+            The password is used to securely store the GitHub access token for this application. We recommend creating a strong password and keeping it safe with a password manager such as LastPass.
+          </p>
+        </div>
+
       </main>
     </div>
 
     <script src="assets/javascripts/app-0.5.30.js"></script>
     <script>
-      const logger = require('electron-timber')
-
       /*
        *  App
        */
-      const {
-        startForm,
-        stopForm,
-        openForm,
-        deleteForm,
-        reloadPage,
-        listServices
-      } = require('./lib/forms')
 
-      global.startForm = startForm
-      global.stopForm = stopForm
-      global.openForm = openForm
-      global.deleteForm = deleteForm
-      global.reloadPage = reloadPage
-
-      logger.log('Listing services ...')
-
-      listServices()
-        .then(() => {
-          logger.log('Services listed')
-        })
+      require('./lib/token')
     </script>
   </body>
 </html>
