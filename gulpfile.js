@@ -20,8 +20,10 @@ const {
   create: transformCreate,
   installation: transformInstallation,
   notification: transformNotification,
+  password: transformPassword,
   runService: transformRunService,
-  settings: transformSettings
+  settings: transformSettings,
+  token: transformToken
 } = require('./build/gulp/transform')
 
 gulp
@@ -76,10 +78,16 @@ gulp
   .task('transform:notification', transformNotification)
 
 gulp
+  .task('transform:password', transformPassword)
+
+gulp
   .task('transform:run-service', transformRunService)
 
 gulp
   .task('transform:settings', transformSettings)
 
 gulp
-  .task('transform', gulp.parallel('transform:app', 'transform:add', 'transform:create', 'transform:installation', 'transform:notification', 'transform:run-service', 'transform:settings'))
+  .task('transform:token', transformToken)
+
+gulp
+  .task('transform', gulp.parallel('transform:app', 'transform:add', 'transform:create', 'transform:installation', 'transform:notification', 'transform:password', 'transform:run-service', 'transform:settings', 'transform:token'))
