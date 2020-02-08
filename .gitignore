@@ -67,3 +67,6 @@ Form Builder Console.*
 # Distribution
 *.provisionprofile
 *.plist
+
+# AOB
+*.token
