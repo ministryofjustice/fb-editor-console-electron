@@ -182,7 +182,7 @@ async function launchApp () {
       while (!getPort(service)) {
         /*
          *  Execute the asyncronous process,
-         *  then get the list of ports in use
+         *  then syncronously get the list of ports in use
          */
         if (await app.isPortInUse(port) || portsInUse().includes(port)) port++
         else setPort(service, port)
@@ -247,7 +247,7 @@ async function launchApp () {
       getPidsForPort(port)
         .forEach((pid) => {
           /*
-           *  ... but push the call to the end of the queue
+           *  ... but push the call to the end of the event queue
            */
           setImmediate(async () => {
             logger.log(`Killing process "${pid}" ...`)
