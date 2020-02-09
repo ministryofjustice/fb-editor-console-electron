@@ -147,7 +147,7 @@
           </div>
         </div>
 
-        <h1 class="govuk-heading-xl">Token and password</h1>
+        <h1 class="govuk-heading-xl">GitHub personal access token and password</h1>
 
         <form id="token-form" method="post" action="./settings.html">
           <div class="govuk-form-group personal-access-token-group">
@@ -157,7 +157,7 @@
           </div>
 
           <div class="govuk-form-group access-token-password-group">
-            <label class="govuk-label" for="access-token-password">Access token password</label>
+            <label class="govuk-label" for="access-token-password">Password</label>
             <span id="access-token-password-error" class="govuk-error-message">Enter an access token password</span>
             <input class="govuk-input govuk-input--width-10" type="text" id="access-token-password" name="access-token-password" />
           </div>
@@ -189,7 +189,6 @@
       /*
        *  App
        */
-
       require('./lib/token')
     </script>
   </body>

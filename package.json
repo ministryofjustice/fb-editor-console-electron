@@ -49,6 +49,7 @@
     "request": "^2.88.0",
     "request-promise-native": "^1.0.8",
     "rimraf": "^3.0.1",
+    "selective-whitespace": "^1.0.4",
     "shelljs": "^0.8.3",
     "strip-ansi": "^6.0.0",
     "yargs-parser": "^16.1.0"

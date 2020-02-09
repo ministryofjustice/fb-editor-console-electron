@@ -32,6 +32,15 @@ const {
   getErrWriteStream
 } = require('./lib/common/write-stream')
 
+const {
+  hasTokenFile,
+  hasToken,
+  getToken,
+  setToken,
+  encryptToken,
+  decryptToken
+} = require('./lib/token-file')
+
 const store = new Store()
 
 logger.setDefaults({ logLevel: 'info' })
@@ -49,48 +58,111 @@ const {
   createInstallationWindow,
   createRunServiceWindow,
   createMainWindow,
+  getPidsForPort,
+  hasPort,
   getPort,
   setPort,
   clearPort,
   confirmServiceIsRunning,
   install,
+  updateEditor,
+  reinstallEditor,
+  installEditor,
+  installEditorDependencies,
   displayNotification,
   dismissNotification
 } = require('./lib/main')
 
-async function beforeQuit () {
+ipcMain.handle('has-token-file', async () => hasTokenFile())
+
+ipcMain.handle('encrypt-token', async (event, token, password) => encryptToken(token, password))
+
+ipcMain.handle('decrypt-token', async (event, password) => decryptToken(password))
+
+ipcMain.handle('has-token', async () => hasToken())
+
+ipcMain.handle('get-token', () => getToken())
+
+ipcMain.handle('set-token', (event, token) => setToken(token))
+
+ipcMain.on('go-to-password', () => {
+  const mainWindow = getMainWindow()
+  if (mainWindow) mainWindow.loadFile('password.html')
+})
+
+ipcMain.on('go-to-settings', (event, param) => {
+  const mainWindow = getMainWindow()
+  if (mainWindow) {
+    mainWindow.loadFile('settings.html')
+    if (param) {
+      const { webContents } = mainWindow
+      webContents.once('dom-ready', () => ipcMain.callRenderer(mainWindow, 'select-tab', param))
+    }
+  }
+})
+
+ipcMain.on('go-to-create', () => {
+  const mainWindow = getMainWindow()
+  if (mainWindow) mainWindow.loadFile('create.html')
+})
+
+ipcMain.answerRenderer('update-editor', updateEditor)
+
+ipcMain.answerRenderer('reinstall-editor', reinstallEditor)
+
+ipcMain.answerRenderer('install-editor', installEditor)
+
+ipcMain.answerRenderer('install-editor-dependencies', installEditorDependencies)
+
+async function clearPorts () {
+  const ports = store.get('ports') || {}
+
   await Promise.all(
     Object
-      .entries(services)
-      .filter(([service, { status = 'stopped' }]) => status === 'running')
-      .map(async ([service]) => {
-        await app.stopService(service)
-        delete services[service]
+      .entries(ports)
+      .map(async ([service, port]) => {
+        logger.log(`Clearing port "${port}" for service "${service}" ...`)
+
+        await app.clearPort(port)
+        clearPort(service)
+
+        logger.log(`Port "${port}" for service "${service}" cleared`)
       })
   )
 
   store.set('ports', {})
 }
 
-const quit = () => logger.log('Goodbye!')
+async function clearServices () {
+  await Promise.all(
+    Object
+      .entries(services)
+      .filter(([service, { status = 'stopped' }]) => status === 'running')
+      .map(async ([service, { port }]) => {
+        logger.log(`Clearing service "${service}" on port "${port}" ...`)
 
-const exit = async () => beforeQuit()
+        await app.stopService(service)
+        delete services[service]
 
-function launchApp () {
-  app.on('before-quit', beforeQuit)
+        logger.log(`Service "${service}" on port "${port}" cleared`)
+      })
+  )
+}
 
-  app.on('quit', quit)
+function portsInUse () {
+  return Object.values(store.get('ports') || {})
+}
+
+async function launchApp () {
+  app.on('quit', () => { logger.log('Goodbye!') })
 
   app.on('window-all-closed', () => {
-    // On OS X it is common for applications and their menu bar
-    // to stay active until the user quits explicitly with Cmd + Q
     if (process.platform !== 'darwin') app.quit()
   })
 
   app.on('activate', () => {
-    // On OS X it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (!app.windows.mainWindow) createMainWindow()
+    const mainWindow = getMainWindow()
+    if (!mainWindow) createMainWindow()
   })
 
   app.launchService = async (service) => {
@@ -102,36 +174,43 @@ function launchApp () {
 
     serviceDetails.status = 'starting'
 
-    const ports = store.get('ports') || {}
-    const usedPorts = Object.values(ports)
+    let [
+      port = 52000
+    ] = portsInUse().sort()
 
-    let port = 52000
-    while (!getPort(service)) {
-      if (usedPorts.includes(port) || await app.isPortInUse(port)) port++
-      else setPort(service, port)
+    if (!hasPort(service)) {
+      while (!getPort(service)) {
+        /*
+         *  Execute the asyncronous process,
+         *  then get the list of ports in use
+         */
+        if (await app.isPortInUse(port) || portsInUse().includes(port)) port++
+        else setPort(service, port)
+      }
+
+      const path = `${app.paths.services}/${service}`
+
+      serviceDetails.name = service
+      serviceDetails.port = port
+      serviceDetails.path = path
+
+      logger.log(`Starting "${service}" on port ${port}`)
+
+      process.env.SERVICE_NAME = service
+      process.env.SERVICE_PORT = port
+      process.env.SERVICE_PATH = path
+
+      createRunServiceWindow(service, serviceWindows, serviceDetails)
+      confirmServiceIsRunning(serviceDetails)
     }
-
-    const path = `${app.paths.services}/${service}`
-
-    serviceDetails.name = service
-    serviceDetails.port = port // getPort(service)
-    serviceDetails.path = path
-
-    logger.log(`Starting "${service}" on port ${port}`)
-
-    process.env.SERVICE_NAME = service
-    process.env.SERVICE_PORT = port
-    process.env.SERVICE_PATH = path
-
-    createRunServiceWindow(service, serviceWindows, serviceDetails)
-    confirmServiceIsRunning(serviceDetails)
   }
 
   app.stopService = async (service) => {
     const serviceDetails = services[service]
     serviceDetails.status = 'stopped'
 
-    await app.clearPort(serviceDetails.port)
+    const { port } = serviceDetails
+    await app.clearPort(port)
 
     clearPort(service)
 
@@ -140,10 +219,11 @@ function launchApp () {
     if (serviceWindow) {
       try {
         serviceWindow.close()
-        delete serviceWindows[service]
-      } catch ({ message }) {
-        logger.error(message)
+      } catch ({ message = '' }) {
+        if (!(message.toLowerCase() === 'object has been destroyed')) logger.error(message)
       }
+
+      delete serviceWindows[service]
     }
   }
 
@@ -161,21 +241,44 @@ function launchApp () {
 
   app.clearPort = async (port) => {
     try {
+      /*
+       *  Execute syncronously during quit ...
+       */
+      getPidsForPort(port)
+        .forEach((pid) => {
+          /*
+           *  ... but push the call to the end of the queue
+           */
+          setImmediate(async () => {
+            logger.log(`Killing process "${pid}" ...`)
+
+            execSync(`kill -s KILL ${pid} 2> /dev/null`)
+
+            logger.log(`Process "${pid}" killed`)
+          })
+        })
+    } catch (e) {
+      /*
+       *  Execute asyncronously during launch ...
+       */
       const [
         {
           pid
         } = {}
       ] = await findProcess('port', port) || []
 
-      if (pid) execSync(`kill -s 9 ${pid}`)
-    } catch ({ message }) {
-      logger.error(message)
+      if (pid) execSync(`kill -s KILL ${pid} 2> /dev/null`)
     }
   }
 
   app.openService = async (service) => {
-    const serviceDetails = services[service]
-    open(`http://localhost:${serviceDetails.port}/admin/flow`)
+    const { name, port } = services[service]
+
+    logger.log(`Opening service "${name}" on port "${port}" ...`)
+
+    await open(`http://localhost:${port}/admin/flow`)
+
+    logger.log(`Service "${name}" on port "${port}" open`)
   }
 
   app.deleteService = async (serviceName) => {
@@ -185,7 +288,7 @@ function launchApp () {
 
     rimraf.sync(servicePath)
 
-    const ports = store.get('ports')
+    const ports = store.get('ports') || {}
 
     delete ports[serviceName]
     delete services[serviceName]
@@ -193,12 +296,9 @@ function launchApp () {
     store.set('ports', ports)
   }
 
-  app.openExternal = async (url) => {
-    open(url)
-  }
+  app.openExternal = (url) => open(url) // promise
 
-  // In this file you can include the rest of your app's specific main process
-  // code. You can also put them in separate files and require them here.
+  await clearPorts()
 
   const mainWindow = getMainWindow()
   if (!mainWindow) createMainWindow()
@@ -218,7 +318,7 @@ async function initialise () {
     }
   }
 
-  launchApp()
+  await launchApp()
 }
 
 const sleep = (t = 3000) => new Promise(resolve => { setTimeout(resolve, t) })
@@ -323,12 +423,15 @@ if (app.isPackaged || isLogToFile()) {
   process.__defineGetter__('stderr', () => errStream)
 }
 
+getDirectories(app.paths.services)
+  .forEach((service) => {
+    services[service] = {}
+  })
+
 logger.log('Waking up ...')
 
-const existingServices = getDirectories(app.paths.services)
+process.on('exit', async () => {
+  await clearServices()
 
-existingServices.forEach((service) => {
-  services[service] = {}
+  store.delete('ports')
 })
-
-process.on('exit', exit)
