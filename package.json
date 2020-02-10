@@ -51,7 +51,7 @@
     "rimraf": "^3.0.1",
     "shelljs": "^0.8.3",
     "strip-ansi": "^6.0.0",
-    "yargs-parser": "^16.1.0"
+    "yargs-parser": "^17.0.0"
   },
   "devDependencies": {
     "@ministryofjustice/module-alias": "^1.0.11",
