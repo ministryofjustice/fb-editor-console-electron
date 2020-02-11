@@ -106,6 +106,11 @@ ipcMain.on('go-to-create', () => {
   if (mainWindow) mainWindow.loadFile('create.html')
 })
 
+ipcMain.on('go-to-index', () => {
+  const mainWindow = getMainWindow()
+  if (mainWindow) mainWindow.loadFile('index.html')
+})
+
 ipcMain.answerRenderer('update-editor', updateEditor)
 
 ipcMain.answerRenderer('reinstall-editor', reinstallEditor)
