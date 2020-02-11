@@ -95,7 +95,7 @@
     "terser-webpack-plugin": "^2.3.4",
     "vinyl-paths": "^3.0.1",
     "webpack": "^4.41.6",
-    "webpack-cli": "^3.3.10",
+    "webpack-cli": "^3.3.11",
     "webpack-merge": "^4.2.2"
   },
   "productName": "Form Builder Console",
