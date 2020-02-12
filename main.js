@@ -41,6 +41,12 @@ const {
   decryptToken
 } = require('./lib/token-file')
 
+const {
+  cloneGitHubRepository,
+  initialiseRepository,
+  initialiseRepositoryWithRemote
+} = require('./lib/github')
+
 const store = new Store()
 
 logger.setDefaults({ logLevel: 'info' })
@@ -62,7 +68,7 @@ const {
   hasPort,
   getPort,
   setPort,
-  clearPort,
+  clearPortFor,
   confirmServiceIsRunning,
   install,
   updateEditor,
@@ -72,6 +78,32 @@ const {
   displayNotification,
   dismissNotification
 } = require('./lib/main')
+
+function goToPassword () {
+  const mainWindow = getMainWindow()
+  if (mainWindow) mainWindow.loadFile('password.html')
+}
+
+function goToSettings (event, param) {
+  const mainWindow = getMainWindow()
+  if (mainWindow) {
+    mainWindow.loadFile('settings.html')
+    if (param) {
+      const { webContents } = mainWindow
+      webContents.once('dom-ready', () => ipcMain.callRenderer(mainWindow, 'select-tab', param))
+    }
+  }
+}
+
+function goToCreate () {
+  const mainWindow = getMainWindow()
+  if (mainWindow) mainWindow.loadFile('create.html')
+}
+
+function goToIndex () {
+  const mainWindow = getMainWindow()
+  if (mainWindow) mainWindow.loadFile('index.html')
+}
 
 ipcMain.handle('has-token-file', async () => hasTokenFile())
 
@@ -85,31 +117,13 @@ ipcMain.handle('get-token', () => getToken())
 
 ipcMain.handle('set-token', (event, token) => setToken(token))
 
-ipcMain.on('go-to-password', () => {
-  const mainWindow = getMainWindow()
-  if (mainWindow) mainWindow.loadFile('password.html')
-})
+ipcMain.on('go-to-password', goToPassword)
 
-ipcMain.on('go-to-settings', (event, param) => {
-  const mainWindow = getMainWindow()
-  if (mainWindow) {
-    mainWindow.loadFile('settings.html')
-    if (param) {
-      const { webContents } = mainWindow
-      webContents.once('dom-ready', () => ipcMain.callRenderer(mainWindow, 'select-tab', param))
-    }
-  }
-})
+ipcMain.on('go-to-settings', goToSettings)
 
-ipcMain.on('go-to-create', () => {
-  const mainWindow = getMainWindow()
-  if (mainWindow) mainWindow.loadFile('create.html')
-})
+ipcMain.on('go-to-create', goToCreate)
 
-ipcMain.on('go-to-index', () => {
-  const mainWindow = getMainWindow()
-  if (mainWindow) mainWindow.loadFile('index.html')
-})
+ipcMain.on('go-to-index', goToIndex)
 
 ipcMain.answerRenderer('update-editor', updateEditor)
 
@@ -118,6 +132,40 @@ ipcMain.answerRenderer('reinstall-editor', reinstallEditor)
 ipcMain.answerRenderer('install-editor', installEditor)
 
 ipcMain.answerRenderer('install-editor-dependencies', installEditorDependencies)
+
+ipcMain.answerRenderer('clone-github-repository', cloneGitHubRepository)
+
+ipcMain.answerRenderer('initialise-repository', async (formName) => {
+  await initialiseRepository(formName, store.get('git') || {})
+
+  goToIndex()
+})
+
+ipcMain.answerRenderer('initialise-repository-with-remote', async (formName = store.get('form-name')) => {
+  if (await hasToken()) {
+    const token = await getToken()
+
+    await initialiseRepositoryWithRemote(formName, store.get('git') || {}, token)
+
+    store.delete('form-name')
+
+    goToIndex()
+  } else {
+    store.set('form-name', formName)
+
+    goToPassword()
+  }
+})
+
+ipcMain.answerRenderer('go-to-create', () => {
+  const mainWindow = getMainWindow()
+  if (mainWindow) {
+    mainWindow.loadFile('create.html')
+    const { webContents } = mainWindow
+
+    webContents.once('dom-ready', () => ipcMain.callRenderer(mainWindow, 'create', store.get('form-name')))
+  }
+})
 
 async function clearPorts () {
   const ports = store.get('ports') || {}
@@ -129,7 +177,7 @@ async function clearPorts () {
         logger.log(`Clearing port "${port}" for service "${service}" ...`)
 
         await app.clearPort(port)
-        clearPort(service)
+        clearPortFor(service)
 
         logger.log(`Port "${port}" for service "${service}" cleared`)
       })
@@ -215,9 +263,9 @@ async function launchApp () {
     serviceDetails.status = 'stopped'
 
     const { port } = serviceDetails
-    await app.clearPort(port)
 
-    clearPort(service)
+    await app.clearPort(port)
+    clearPortFor(service)
 
     const serviceWindow = serviceWindows[service]
 
@@ -254,12 +302,16 @@ async function launchApp () {
           /*
            *  ... but push the call to the end of the event queue
            */
-          setImmediate(async () => {
-            logger.log(`Killing process "${pid}" ...`)
+          setImmediate(() => {
+            try {
+              logger.log(`Killing process "${pid}" ...`)
 
-            execSync(`kill -s KILL ${pid} 2> /dev/null`)
+              execSync(`kill -s KILL ${pid} 2> /dev/null`)
 
-            logger.log(`Process "${pid}" killed`)
+              logger.log(`Process "${pid}" killed`)
+            } catch ({ message }) {
+              logger.error(message)
+            }
           })
         })
     } catch (e) {
@@ -272,7 +324,17 @@ async function launchApp () {
         } = {}
       ] = await findProcess('port', port) || []
 
-      if (pid) execSync(`kill -s KILL ${pid} 2> /dev/null`)
+      if (pid) {
+        try {
+          logger.log(`Killing process "${pid}" ...`)
+
+          execSync(`kill -s KILL ${pid} 2> /dev/null`)
+
+          logger.log(`Process "${pid}" killed`)
+        } catch ({ message }) {
+          logger.error(message)
+        }
+      }
     }
   }
 
