@@ -211,6 +211,12 @@ function portsInUse () {
 }
 
 async function launchApp () {
+  app.on('will-quit', async () => {
+    await clearServices()
+
+    store.delete('ports')
+  })
+
   app.on('quit', () => { logger.log('Goodbye!') })
 
   app.on('window-all-closed', () => {
@@ -297,49 +303,26 @@ async function launchApp () {
   }
 
   app.clearPort = async (port) => {
-    try {
-      /*
-       *  Execute syncronously during quit ...
-       */
-      getPidsForPort(port)
-        .forEach((pid) => {
-          /*
-           *  ... but push the call to the end of the event queue
-           */
-          setImmediate(() => {
-            try {
-              logger.log(`Killing process "${pid}" ...`)
+    /*
+     *  Execute syncronously (important for quit) ...
+     */
+    getPidsForPort(port)
+      .forEach((pid) => {
+        /*
+         *  ... but push the call to the end of the event queue
+         */
+        setImmediate(() => {
+          try {
+            logger.log(`Killing process "${pid}" ...`)
 
-              execSync(`kill -s KILL ${pid} 2> /dev/null`)
+            execSync(`kill -s KILL ${pid} 2> /dev/null`)
 
-              logger.log(`Process "${pid}" killed`)
-            } catch ({ message }) {
-              logger.error(message)
-            }
-          })
+            logger.log(`Process "${pid}" killed`)
+          } catch ({ message }) {
+            logger.error(message)
+          }
         })
-    } catch (e) {
-      /*
-       *  Execute asyncronously during launch ...
-       */
-      const [
-        {
-          pid
-        } = {}
-      ] = await findProcess('port', port) || []
-
-      if (pid) {
-        try {
-          logger.log(`Killing process "${pid}" ...`)
-
-          execSync(`kill -s KILL ${pid} 2> /dev/null`)
-
-          logger.log(`Process "${pid}" killed`)
-        } catch ({ message }) {
-          logger.error(message)
-        }
-      }
-    }
+      })
   }
 
   app.openService = async (service) => {
@@ -500,9 +483,3 @@ getDirectories(app.paths.services)
   })
 
 logger.log('Waking up ...')
-
-process.on('exit', async () => {
-  await clearServices()
-
-  store.delete('ports')
-})
