@@ -133,7 +133,11 @@ ipcMain.answerRenderer('install-editor', installEditor)
 
 ipcMain.answerRenderer('install-editor-dependencies', installEditorDependencies)
 
-ipcMain.answerRenderer('clone-github-repository', cloneGitHubRepository)
+ipcMain.answerRenderer('clone-github-repository', async (repositoryUrl) => {
+  await cloneGitHubRepository(repositoryUrl)
+
+  goToIndex()
+})
 
 ipcMain.answerRenderer('initialise-repository', async (formName) => {
   await initialiseRepository(formName, store.get('git') || {})
