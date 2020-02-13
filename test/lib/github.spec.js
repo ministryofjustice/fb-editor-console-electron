@@ -16,7 +16,7 @@ const {
   path: {},
   pathExists: {},
   rimraf: {},
-  glob: {},
+  'glob-all': {},
   request: {},
   git: {},
   './common': {
