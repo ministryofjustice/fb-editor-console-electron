@@ -35,7 +35,7 @@ const {
   }
 })
 
-describe('~/fb-editor-console-electron/lib/app', () => {
+describe('~/fb-editor-console-electron/lib/forms', () => {
   before(() => {
     global.document = {
       getElementById: sinon.stub().returns({})
