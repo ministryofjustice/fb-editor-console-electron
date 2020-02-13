@@ -13,6 +13,11 @@ const mockCipher = {
   final: sinon.stub()
 }
 
+const mockDecipher = {
+  update: sinon.stub(),
+  final: sinon.stub()
+}
+
 // const mockSubstr = sinon.stub()
 
 const mockDigest = {
@@ -30,6 +35,7 @@ const mockHash = {
 const mockCrypto = {
   randomBytes: sinon.stub(),
   createCipheriv: sinon.stub().returns(mockCipher),
+  createDecipheriv: sinon.stub().returns(mockDecipher),
   createHash: sinon.stub().returns(mockHash)
 }
 
@@ -117,6 +123,85 @@ describe('~/fb-editor-console-electron/lib/token-file/crypto', () => {
 
       it('creates a cipher initialisation vector with the default algorithm', () => {
         expect(mockCrypto.createCipheriv).to.be.calledWith('aes-256-ctr', 'mock hash key', 'mock iv')
+      })
+    })
+  })
+
+  describe('`decrypt()`', () => {
+    const mockBuffer = {
+      slice: sinon.stub()
+    }
+    const mockReturnValue = {}
+    const mockConcat = sinon.stub().returns(mockReturnValue)
+    let returnValue
+
+    beforeEach(() => {
+      global.Buffer = {
+        concat: mockConcat
+      }
+
+      mockBuffer.slice.returns('mock slice')
+      mockCrypto.randomBytes.returns('mock iv')
+      mockDigest.substr.returns('mock hash key')
+      mockDecipher.update.returns('mock decipher update')
+      mockDecipher.final.returns('mock decipher final')
+    })
+
+    afterEach(() => {
+      delete global.Buffer
+
+      mockCrypto.randomBytes.resetHistory()
+      mockCrypto.createCipheriv.resetHistory()
+      mockCrypto.createHash.resetHistory()
+      mockHash.update.resetHistory()
+      mockUpdate.digest.resetHistory()
+      mockDigest.substr.resetHistory()
+      mockDecipher.update.resetHistory()
+      mockDecipher.final.resetHistory()
+    })
+
+    describe('Always', () => {
+      beforeEach(() => {
+        returnValue = decrypt(mockBuffer, 'mock key')
+      })
+
+      it('gets the buffer bytes', () => {
+        expect(mockBuffer.slice.firstCall).to.have.been.calledWith(0, 16)
+      })
+
+      it('gets the hash key', () => {
+        expect(mockCrypto.createHash).to.have.been.calledWith('sha256')
+        expect(mockHash.update).to.have.been.calledWith('mock key')
+        expect(mockUpdate.digest).to.have.been.calledWith('base64')
+        expect(mockDigest.substr).to.have.been.calledWith(0, 32)
+      })
+
+      it('returns a Buffer', () => {
+        expect(mockBuffer.slice.lastCall).to.have.been.calledWith(16)
+
+        expect(mockConcat).to.have.been.calledWith(['mock decipher update', 'mock decipher final'])
+
+        expect(returnValue).to.equal(mockReturnValue)
+      })
+    })
+
+    describe('With an algorithm', () => {
+      beforeEach(() => {
+        returnValue = decrypt(mockBuffer, 'mock key', 'mock algorithm')
+      })
+
+      it('creates a decipher initialisation vector', () => {
+        expect(mockCrypto.createDecipheriv).to.be.calledWith('mock algorithm', 'mock hash key', 'mock slice')
+      })
+    })
+
+    describe('Without an algorithm', () => {
+      beforeEach(() => {
+        returnValue = decrypt(mockBuffer, 'mock key')
+      })
+
+      it('creates a cipher initialisation vector with the default algorithm', () => {
+        expect(mockCrypto.createDecipheriv).to.be.calledWith('aes-256-ctr', 'mock hash key', 'mock slice')
       })
     })
   })
