@@ -18,13 +18,13 @@ const buildTargetPath = path.relative(currentDir, targetPath)
 const buildAssetsPath = path.relative(currentDir, assetsPath)
 
 const imagesClean = () =>
-  gulp.src(`${buildTargetPath}/images/*`, {read: false})
-    .pipe(vinylPaths((paths) => del(paths, {force: true})))
+  gulp.src(`${buildTargetPath}/images/*`, { read: false })
+    .pipe(vinylPaths((paths) => del(paths, { force: true })))
 
 const images = () =>
   gulp.src([`${buildSourcePath}/images/**/*.*`, `${buildAssetsPath}/images/**/*.*`])
     .pipe(gulp.dest(`${buildTargetPath}/images`))
-    .pipe(debug({title: 'Images'}))
+    .pipe(debug({ title: 'Images' }))
 
 const imagesWatch = () =>
   gulp.watch(

@@ -18,13 +18,13 @@ const buildTargetPath = path.relative(currentDir, targetPath)
 const buildAssetsPath = path.relative(currentDir, assetsPath)
 
 const fontsClean = () =>
-  gulp.src(`${buildTargetPath}/fonts/*`, {read: false})
-    .pipe(vinylPaths((paths) => del(paths, {force: true})))
+  gulp.src(`${buildTargetPath}/fonts/*`, { read: false })
+    .pipe(vinylPaths((paths) => del(paths, { force: true })))
 
 const fonts = () =>
   gulp.src([`${buildSourcePath}/fonts/**/*.*`, `${buildAssetsPath}/fonts/**/*.*`])
     .pipe(gulp.dest(`${buildTargetPath}/fonts`))
-    .pipe(debug({title: 'Fonts'}))
+    .pipe(debug({ title: 'Fonts' }))
 
 const fontsWatch = () =>
   gulp.watch(

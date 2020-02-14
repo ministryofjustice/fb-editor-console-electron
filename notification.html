@@ -1,8 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Notification</title>
+
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'" />
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'" />
+
     <link rel="stylesheet" href="assets/stylesheets/notification-0.5.31.css" />
   </head>
   <body>
@@ -17,10 +21,10 @@
           <img src="assets/images/govuk-crown-animated.gif" alt="" />
         </div>
         <div class="info govuk-body-m">
-          <h2 id="consoleInstallerPhase" class="govuk-heading-l">
+          <h2 id="notification-phase" class="govuk-heading-l">
             <!-- -->
           </h2>
-          <p id="consoleInstallerMessage" class="govuk-body-l">
+          <p id="notification-message" class="govuk-body-l">
             <!-- -->
           </p>
         </div>
@@ -34,3 +38,4 @@
     </script>
   </body>
 </html>
+

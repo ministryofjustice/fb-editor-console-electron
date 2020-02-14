@@ -1,278 +1,231 @@
+require('@ministryofjustice/module-alias/register')
+
 const { execSync } = require('child_process')
 const path = require('path')
-const pathExists = require('path-exists')
 const rimraf = require('rimraf')
 const ospath = require('ospath')
 const findProcess = require('find-process')
-const glob = require('glob')
 const open = require('open')
-const request = require('request-promise-native')
 const fs = require('fs')
 const git = require('isomorphic-git')
+
+const {
+  app
+} = require('electron')
+
 const logger = require('electron-timber')
-const stripAnsi = require('strip-ansi')
-const yargsParser = require('yargs-parser')
-
-const args = new Map(Object.entries(yargsParser(process.argv.slice(2))))
-
-logger.setDefaults({ logLevel: 'info' })
-
-git.plugins.set('fs', fs)
 
 const {
   ipcMain
 } = require('electron-better-ipc')
 
 const Store = require('electron-store')
+
+const {
+  getDirectories,
+  isLogToFile,
+  isProbablyFirstUse
+} = require('./lib/common')
+
+const {
+  getOutWriteStream,
+  getErrWriteStream
+} = require('./lib/common/write-stream')
+
+const {
+  hasTokenFile,
+  hasToken,
+  getToken,
+  setToken,
+  encryptToken,
+  decryptToken
+} = require('./lib/token-file')
+
+const {
+  cloneGitHubRepository,
+  initialiseRepository,
+  initialiseRepositoryWithRemote
+} = require('./lib/github')
+
 const store = new Store()
 
-const {
-  lstatSync,
-  readdirSync
-} = fs
+logger.setDefaults({ logLevel: 'info' })
 
-const {
-  app,
-  BrowserWindow,
-  Menu
-} = require('electron')
+git.plugins.set('fs', fs)
 
-const TEMPLATE = [
-  {
-    label: 'Application',
-    submenu: [
-      { label: 'About Application', selector: 'orderFrontStandardAboutPanel:' },
-      { type: 'separator' },
-      { label: 'Quit', accelerator: 'Command+Q', click: () => { app.quit() } }
-    ]
-  },
-  {
-    label: 'Edit',
-    submenu: [
-      { label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:' },
-      { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:' },
-      { type: 'separator' },
-      { label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:' },
-      { label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:' },
-      { label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:' },
-      { label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:' }
-    ]
-  }
-]
-
+const windows = {}
 const services = {}
 const serviceWindows = {}
+const paths = {}
 
-const isDirectory = (source) => lstatSync(source).isDirectory()
+const {
+  getMainWindow,
+  createNotificationWindow,
+  createInstallationWindow,
+  createRunServiceWindow,
+  createMainWindow,
+  getPidsForPort,
+  hasPort,
+  getPort,
+  setPort,
+  clearPortFor,
+  confirmServiceIsRunning,
+  install,
+  updateEditor,
+  reinstallEditor,
+  installEditor,
+  installEditorDependencies,
+  displayNotification,
+  dismissNotification
+} = require('./lib/main')
 
-const isLogToFile = () => args.get('logToFile') || false
-const isOpenTools = () => args.get('openTools') || false
-
-function getOutWriteStream (outStreamPath) {
-  const outStream = fs.createWriteStream(outStreamPath, { flags: 'a' })
-
-  if (isLogToFile()) {
-    const {
-      write
-    } = outStream
-
-    outStream.write = (value) => write.call(outStream, stripAnsi(value))
-  }
-
-  return outStream
+function goToPassword () {
+  const mainWindow = getMainWindow()
+  if (mainWindow) mainWindow.loadFile('password.html')
 }
 
-function getErrWriteStream (errStreamPath) {
-  const errStream = fs.createWriteStream(errStreamPath, { flags: 'a' })
-
-  if (isLogToFile()) {
-    const {
-      write
-    } = errStream
-
-    errStream.write = (value) => write.call(errStream, stripAnsi(value))
-  }
-
-  return errStream
-}
-
-const getDirectories = (source) => readdirSync(source).map((name) => path.join(source, name)).filter(isDirectory).map((directory) => path.basename(directory))
-
-function getNotificationWindow () {
-  const {
-    windows: {
-      notificationWindow
+function goToSettings (event, param) {
+  const mainWindow = getMainWindow()
+  if (mainWindow) {
+    mainWindow.loadFile('settings.html')
+    if (param) {
+      const { webContents } = mainWindow
+      webContents.once('dom-ready', () => ipcMain.callRenderer(mainWindow, 'select-tab', param))
     }
-  } = app
-
-  return notificationWindow
-}
-
-function getInstallationWindow () {
-  const {
-    windows: {
-      installationWindow
-    }
-  } = app
-
-  return installationWindow
-}
-
-function createNotificationWindow () {
-  const notificationWindow = new BrowserWindow({
-    transparent: true,
-    frame: false,
-    toolbar: false,
-    width: 400,
-    height: isProbablyFirstUse() ? 200 : 134,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  })
-  notificationWindow.on('blur', () => notificationWindow.focus())
-  notificationWindow.loadFile('notification.html')
-  notificationWindow.hide()
-
-  if (isOpenTools()) notificationWindow.webContents.openDevTools()
-
-  app.windows.notificationWindow = notificationWindow
-}
-
-function createInstallationWindow () {
-  const installationWindow = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  })
-
-  installationWindow.loadFile('installation.html')
-
-  app.windows.installationWindow = installationWindow
-}
-
-function createRunServiceWindow (service, { port }) {
-  const runServiceWindow = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  })
-
-  runServiceWindow.loadFile('run-service.html')
-  runServiceWindow.on('closed', async () => {
-    delete serviceWindows[service]
-    await app.clearPort(port)
-  })
-
-  serviceWindows[service] = runServiceWindow
-}
-
-function createMainWindow () {
-  const mainWindow = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  })
-
-  mainWindow.maximize()
-  mainWindow.loadFile('index.html')
-  mainWindow.show()
-
-  if (isOpenTools()) mainWindow.webContents.openDevTools()
-
-  const menu = Menu.buildFromTemplate(TEMPLATE)
-  Menu.setApplicationMenu(menu)
-
-  mainWindow.on('closed', () => { delete app.windows.mainWindow })
-
-  /*
-   *  Expose a reference
-   */
-  app.windows.mainWindow = mainWindow
-}
-
-function getPort (service) {
-  const ports = app.store.get('ports') || {}
-  return ports[service]
-}
-
-function setPort (service, port) {
-  const ports = app.store.get('ports') || {}
-  app.store.set('ports', { ...ports, [service]: port })
-}
-
-function clearPort (service) {
-  const ports = app.store.get('ports') || {}
-  delete ports[service]
-  app.store.set('ports', ports)
-}
-
-async function runInstallation (installation) {
-  try {
-    const installationWindow = getInstallationWindow()
-    if (installationWindow) await ipcMain.callRenderer(installationWindow, installation)
-  } catch ({ message }) {
-    logger.log(`Process "${installation}" failed (${message})`)
   }
 }
 
-function confirmServiceIsRunning (serviceDetails, i = 0) {
-  setTimeout(() => {
-    request.get(`http://localhost:${serviceDetails.port}`)
-      .then(() => {
-        serviceDetails.status = 'running'
-        const {
-          name,
-          port
-        } = serviceDetails
+function goToCreate () {
+  const mainWindow = getMainWindow()
+  if (mainWindow) mainWindow.loadFile('create.html')
+}
 
-        logger.log(`"${name}" started on port ${port}`)
-        if (app.windows.mainWindow) app.windows.mainWindow.webContents.executeJavaScript(`listServices('${name}')`)
+function goToIndex () {
+  const mainWindow = getMainWindow()
+  if (mainWindow) mainWindow.loadFile('index.html')
+}
+
+ipcMain.handle('has-token-file', async () => hasTokenFile())
+
+ipcMain.handle('encrypt-token', async (event, token, password) => encryptToken(token, password))
+
+ipcMain.handle('decrypt-token', async (event, password) => decryptToken(password))
+
+ipcMain.handle('has-token', async () => hasToken())
+
+ipcMain.handle('get-token', () => getToken())
+
+ipcMain.handle('set-token', (event, token) => setToken(token))
+
+ipcMain.on('go-to-password', goToPassword)
+
+ipcMain.on('go-to-settings', goToSettings)
+
+ipcMain.on('go-to-create', goToCreate)
+
+ipcMain.on('go-to-index', goToIndex)
+
+ipcMain.answerRenderer('update-editor', updateEditor)
+
+ipcMain.answerRenderer('reinstall-editor', reinstallEditor)
+
+ipcMain.answerRenderer('install-editor', installEditor)
+
+ipcMain.answerRenderer('install-editor-dependencies', installEditorDependencies)
+
+ipcMain.answerRenderer('clone-github-repository', async (repositoryUrl) => {
+  await cloneGitHubRepository(repositoryUrl)
+
+  goToIndex()
+})
+
+ipcMain.answerRenderer('initialise-repository', async (formName) => {
+  await initialiseRepository(formName, store.get('git') || {})
+
+  goToIndex()
+})
+
+ipcMain.answerRenderer('initialise-repository-with-remote', async (formName = store.get('form-name')) => {
+  if (await hasToken()) {
+    const token = await getToken()
+
+    await initialiseRepositoryWithRemote(formName, store.get('git') || {}, token)
+
+    store.delete('form-name')
+
+    goToIndex()
+  } else {
+    store.set('form-name', formName)
+
+    goToPassword()
+  }
+})
+
+ipcMain.answerRenderer('go-to-create', () => {
+  const mainWindow = getMainWindow()
+  if (mainWindow) {
+    mainWindow.loadFile('create.html')
+    const { webContents } = mainWindow
+
+    webContents.once('dom-ready', () => ipcMain.callRenderer(mainWindow, 'create', store.get('form-name')))
+  }
+})
+
+async function clearPorts () {
+  const ports = store.get('ports') || {}
+
+  await Promise.all(
+    Object
+      .entries(ports)
+      .map(async ([service, port]) => {
+        logger.log(`Clearing port "${port}" for service "${service}" ...`)
+
+        await app.clearPort(port)
+        clearPortFor(service)
+
+        logger.log(`Port "${port}" for service "${service}" cleared`)
       })
-      .catch(() => {
-        /*
-         *  Let's not do this indefinitely
-         */
-        if (i++ < 1000) confirmServiceIsRunning(serviceDetails, i)
-      })
-  }, 250)
+  )
+
+  store.set('ports', {})
 }
 
-async function beforeQuit () {
+async function clearServices () {
   await Promise.all(
     Object
       .entries(services)
       .filter(([service, { status = 'stopped' }]) => status === 'running')
-      .map(async ([service]) => {
+      .map(async ([service, { port }]) => {
+        logger.log(`Clearing service "${service}" on port "${port}" ...`)
+
         await app.stopService(service)
         delete services[service]
+
+        logger.log(`Service "${service}" on port "${port}" cleared`)
       })
   )
-
-  app.store.set('ports', {})
 }
 
-const quit = () => logger.log('Goodbye!')
+function portsInUse () {
+  return Object.values(store.get('ports') || {})
+}
 
-const exit = async () => beforeQuit()
+async function launchApp () {
+  app.on('will-quit', async () => {
+    await clearServices()
 
-function launchApp () {
-  app.on('before-quit', beforeQuit)
+    store.delete('ports')
+  })
 
-  app.on('quit', quit)
+  app.on('quit', () => { logger.log('Goodbye!') })
 
   app.on('window-all-closed', () => {
-    // On OS X it is common for applications and their menu bar
-    // to stay active until the user quits explicitly with Cmd + Q
     if (process.platform !== 'darwin') app.quit()
   })
 
   app.on('activate', () => {
-    // On OS X it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (!app.windows.mainWindow) createMainWindow()
+    const mainWindow = getMainWindow()
+    if (!mainWindow) createMainWindow()
   })
 
   app.launchService = async (service) => {
@@ -284,48 +237,56 @@ function launchApp () {
 
     serviceDetails.status = 'starting'
 
-    const ports = app.store.get('ports') || {}
-    const usedPorts = Object.values(ports)
+    let [
+      port = 52000
+    ] = portsInUse().sort()
 
-    let port = 52000
-    while (!getPort(service)) {
-      if (usedPorts.includes(port) || await app.isPortInUse(port)) port++
-      else setPort(service, port)
+    if (!hasPort(service)) {
+      while (!getPort(service)) {
+        /*
+         *  Execute the asyncronous process,
+         *  then syncronously get the list of ports in use
+         */
+        if (await app.isPortInUse(port) || portsInUse().includes(port)) port++
+        else setPort(service, port)
+      }
+
+      const path = `${app.paths.services}/${service}`
+
+      serviceDetails.name = service
+      serviceDetails.port = port
+      serviceDetails.path = path
+
+      logger.log(`Starting "${service}" on port ${port}`)
+
+      process.env.SERVICE_NAME = service
+      process.env.SERVICE_PORT = port
+      process.env.SERVICE_PATH = path
+
+      createRunServiceWindow(service, serviceWindows, serviceDetails)
+      confirmServiceIsRunning(serviceDetails)
     }
-
-    const path = `${app.paths.services}/${service}`
-
-    serviceDetails.name = service
-    serviceDetails.port = port // getPort(service)
-    serviceDetails.path = path
-
-    logger.log(`Starting "${service}" on port ${port}`)
-
-    process.env.SERVICE_NAME = service
-    process.env.SERVICE_PORT = port
-    process.env.SERVICE_PATH = path
-
-    createRunServiceWindow(service, serviceDetails)
-    confirmServiceIsRunning(serviceDetails)
   }
 
   app.stopService = async (service) => {
     const serviceDetails = services[service]
     serviceDetails.status = 'stopped'
 
-    await app.clearPort(serviceDetails.port)
+    const { port } = serviceDetails
 
-    clearPort(service)
+    await app.clearPort(port)
+    clearPortFor(service)
 
     const serviceWindow = serviceWindows[service]
 
     if (serviceWindow) {
       try {
         serviceWindow.close()
-        delete serviceWindows[service]
-      } catch ({ message }) {
-        logger.error(message)
+      } catch ({ message = '' }) {
+        if (!(message.toLowerCase() === 'object has been destroyed')) logger.error(message)
       }
+
+      delete serviceWindows[service]
     }
   }
 
@@ -342,22 +303,36 @@ function launchApp () {
   }
 
   app.clearPort = async (port) => {
-    try {
-      const [
-        {
-          pid
-        } = {}
-      ] = await findProcess('port', port) || []
+    /*
+     *  Execute syncronously (important for quit) ...
+     */
+    getPidsForPort(port)
+      .forEach((pid) => {
+        /*
+         *  ... but push the call to the end of the event queue
+         */
+        setImmediate(() => {
+          try {
+            logger.log(`Killing process "${pid}" ...`)
 
-      if (pid) execSync(`kill -s 9 ${pid}`)
-    } catch ({ message }) {
-      logger.error(message)
-    }
+            execSync(`kill -s KILL ${pid} 2> /dev/null`)
+
+            logger.log(`Process "${pid}" killed`)
+          } catch ({ message }) {
+            logger.error(message)
+          }
+        })
+      })
   }
 
   app.openService = async (service) => {
-    const serviceDetails = services[service]
-    open(`http://localhost:${serviceDetails.port}/admin/flow`)
+    const { name, port } = services[service]
+
+    logger.log(`Opening service "${name}" on port "${port}" ...`)
+
+    await open(`http://localhost:${port}/admin/flow`)
+
+    logger.log(`Service "${name}" on port "${port}" open`)
   }
 
   app.deleteService = async (serviceName) => {
@@ -367,43 +342,28 @@ function launchApp () {
 
     rimraf.sync(servicePath)
 
-    const ports = app.store.get('ports')
+    const ports = store.get('ports') || {}
 
     delete ports[serviceName]
     delete services[serviceName]
 
-    app.store.set('ports', ports)
+    store.set('ports', ports)
   }
 
-  app.openExternal = async (url) => {
-    open(url)
-  }
+  app.openExternal = (url) => open(url) // promise
 
-  // In this file you can include the rest of your app's specific main process
-  // code. You can also put them in separate files and require them here.
-  if (!app.windows.mainWindow) createMainWindow()
+  await clearPorts()
+
+  const mainWindow = getMainWindow()
+  if (!mainWindow) createMainWindow()
 }
-
-async function install () {
-  await app.notify('Starting Editor installation ...', { phase: 'Install Editor' })
-
-  await app.installEditor()
-
-  await app.notify('Installing dependencies ...', { phase: 'Install Editor' })
-
-  app.installEditorDependencies()
-
-  await app.notify('Editor installation finished', { dismiss: true })
-}
-
-const isProbablyFirstUse = () => !(pathExists.sync(app.paths.nvs) && pathExists.sync(app.paths.editor))
 
 async function initialise () {
   createNotificationWindow()
 
   createInstallationWindow()
 
-  if (isProbablyFirstUse()) {
+  if (isProbablyFirstUse(app)) {
     await sleep(1000)
     try {
       await install()
@@ -412,23 +372,16 @@ async function initialise () {
     }
   }
 
-  launchApp()
+  await launchApp()
 }
 
 const sleep = (t = 3000) => new Promise(resolve => { setTimeout(resolve, t) })
 
 app.git = git
-app.utils = {
-  pathExists,
-  isDirectory,
-  glob,
-  request,
-  rimraf
-}
-app.windows = {}
 app.store = store
+app.windows = windows
 app.services = services
-app.paths = {}
+app.paths = paths
 
 // https://github.com/electron/electron/issues/18397
 app.allowRendererProcessReuse = true
@@ -445,28 +398,8 @@ app.on('ready', async () => {
   logger.log('Ready!')
 })
 
-app.notify = async function displayNotification (message, options = {}) {
-  const params = typeof message === 'object' ? message : Object.assign(options, { message })
-
-  const notificationWindow = getNotificationWindow()
-  if (notificationWindow) {
-    notificationWindow.show()
-    await ipcMain.callRenderer(notificationWindow, 'send-notification', params)
-  }
-}
-
-app.dismissNotification = async function dismissNotification () {
-  await app.notify({ dismiss: true })
-
-  const notificationWindow = getNotificationWindow()
-  if (notificationWindow) notificationWindow.hide()
-}
-
-app.updateEditor = async () => runInstallation('updateEditor')
-
-app.reinstallEditor = async () => runInstallation('reinstallEditor')
-
-app.installEditor = async () => runInstallation('installEditor')
+app.displayNotification = displayNotification
+app.dismissNotification = dismissNotification
 
 app.setService = (name, params = {}) => {
   services[name] = params
@@ -499,6 +432,9 @@ ipcMain.answerRenderer('getServices', () => services)
 
   const editorPath = path.join(formBuilderPath, '.editor')
   app.paths.editor = editorPath
+
+  const tokenPath = path.join(formBuilderPath, '.token')
+  app.paths.token = tokenPath
 
   const servicesPath = path.join(formBuilderPath, 'forms')
   app.paths.services = servicesPath
@@ -541,12 +477,9 @@ if (app.isPackaged || isLogToFile()) {
   process.__defineGetter__('stderr', () => errStream)
 }
 
+getDirectories(app.paths.services)
+  .forEach((service) => {
+    services[service] = {}
+  })
+
 logger.log('Waking up ...')
-
-const existingServices = getDirectories(app.paths.services)
-
-existingServices.forEach((service) => {
-  services[service] = {}
-})
-
-process.on('exit', exit)

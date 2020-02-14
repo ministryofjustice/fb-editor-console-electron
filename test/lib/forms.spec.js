@@ -23,18 +23,19 @@ const {
 } = proxyquire('~/lib/forms', {
   'electron-better-ipc': betterIpc,
   'electron-timber': timber,
-  './app': {
-    app: {
-      store: {
-        get: sinon.stub().returns({}),
-        set: sinon.stub()
+  electron: {
+    remote: {
+      app: {
+        store: {
+          get: sinon.stub().returns({}),
+          set: sinon.stub()
+        }
       }
-    },
-    remote: {}
+    }
   }
 })
 
-describe('~/fb-editor-console-electron/lib/app', () => {
+describe('~/fb-editor-console-electron/lib/forms', () => {
   before(() => {
     global.document = {
       getElementById: sinon.stub().returns({})

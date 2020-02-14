@@ -69,4 +69,4 @@ Form Builder Console.*
 *.plist
 
 # AOB
-.token
+*.token
