@@ -1,5 +1,3 @@
-require('@ministryofjustice/module-alias/register')
-
 const path = require('path')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const {
@@ -10,12 +8,12 @@ const TerserPlugin = require('terser-webpack-plugin')
 const {
   sourcePath,
   targetPath
-} = require('~/build/paths')
+} = require('./build/paths')
 
 const buildSourcePath = path.join(sourcePath, 'js/app.js')
 const buildTargetPath = path.join(targetPath, 'javascripts')
 
-const { version } = require('~/package')
+const { version } = require('./package')
 
 module.exports = () => ({
   mode: 'production',

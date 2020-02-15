@@ -1,5 +1,3 @@
-require('@ministryofjustice/module-alias/register')
-
 const { execSync } = require('child_process')
 const path = require('path')
 const rimraf = require('rimraf')

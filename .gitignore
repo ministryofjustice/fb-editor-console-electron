@@ -58,6 +58,9 @@ jspm_packages
 # Husky
 .huskyrc
 
+# Build
+electron-builder.json
+
 # Release
 Form.Builder.Console
 Form.Builder.Console.*
