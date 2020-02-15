@@ -1,5 +1,3 @@
-require('@ministryofjustice/module-alias/register')
-
 const { execSync } = require('child_process')
 const path = require('path')
 const rimraf = require('rimraf')
@@ -105,13 +103,13 @@ function goToIndex () {
   if (mainWindow) mainWindow.loadFile('index.html')
 }
 
-ipcMain.handle('has-token-file', async () => hasTokenFile())
+ipcMain.handle('has-token-file', () => hasTokenFile())
 
-ipcMain.handle('encrypt-token', async (event, token, password) => encryptToken(token, password))
+ipcMain.handle('encrypt-token', (event, token, password) => encryptToken(token, password))
 
-ipcMain.handle('decrypt-token', async (event, password) => decryptToken(password))
+ipcMain.handle('decrypt-token', (event, password) => decryptToken(password))
 
-ipcMain.handle('has-token', async () => hasToken())
+ipcMain.handle('has-token', () => hasToken())
 
 ipcMain.handle('get-token', () => getToken())
 
