@@ -1,8 +1,4 @@
-Form Builder*
-
 .DS_Store
-dist/
-public/
 
 # Logs
 reports
@@ -59,17 +55,21 @@ jspm_packages
 .huskyrc
 
 # Build
+*.provisionprofile
+*.plist
 electron-builder.json
+build/*.provisionprofile
+build/*.plist
+build/electron-builder.json
 
 # Release
 Form.Builder.Console
 Form.Builder.Console.*
+Form.Builder.Console-*
 Form Builder Console
 Form Builder Console.*
-
-# Distribution
-*.provisionprofile
-*.plist
+Form Builder Console-*
+dist
 
 # AOB
 *.token
