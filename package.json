@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "build": "cross-env NODE_ENV=production concurrently -r \"npm run gulp -- build\" \"webpack\"",
-    "build:watch": "npm run gulp -- build:watch",
+    "build:watch": "cross-env NODE_ENV=production concurrently -r \"npm run gulp -- build:watch\" \"webpack --watch\"",
     "build:fonts": "npm run gulp -- build:fonts",
     "build:fonts:watch": "npm run gulp -- build:fonts:watch",
     "build:images": "npm run gulp -- build:images",
