@@ -18,10 +18,8 @@ const mockDecipher = {
   final: sinon.stub()
 }
 
-// const mockSubstr = sinon.stub()
-
 const mockDigest = {
-  substr: sinon.stub() // .returns(mockSubstr)
+  substr: sinon.stub()
 }
 
 const mockUpdate = {
@@ -59,6 +57,8 @@ describe('~/fb-editor-console-electron/lib/token-file/crypto', () => {
     const mockConcat = sinon.stub().returns(mockReturnValue)
     let returnValue
 
+    const B = global.Buffer
+
     beforeEach(() => {
       global.Buffer = {
         concat: mockConcat
@@ -72,6 +72,7 @@ describe('~/fb-editor-console-electron/lib/token-file/crypto', () => {
 
     afterEach(() => {
       delete global.Buffer
+      global.Buffer = B
 
       mockCrypto.randomBytes.resetHistory()
       mockCrypto.createCipheriv.resetHistory()
@@ -135,6 +136,8 @@ describe('~/fb-editor-console-electron/lib/token-file/crypto', () => {
     const mockConcat = sinon.stub().returns(mockReturnValue)
     let returnValue
 
+    const B = global.Buffer
+
     beforeEach(() => {
       global.Buffer = {
         concat: mockConcat
@@ -149,6 +152,7 @@ describe('~/fb-editor-console-electron/lib/token-file/crypto', () => {
 
     afterEach(() => {
       delete global.Buffer
+      global.Buffer = B
 
       mockCrypto.randomBytes.resetHistory()
       mockCrypto.createCipheriv.resetHistory()
