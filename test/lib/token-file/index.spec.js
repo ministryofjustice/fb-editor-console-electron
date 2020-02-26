@@ -34,6 +34,13 @@ const {
     readFile: mockReadFile,
     writeFile: mockWriteFile
   },
+  electron: {
+    app: {
+      paths: {
+        token: 'mock token path'
+      }
+    }
+  },
   'electron-timber': timber,
   './crypto': {
     encrypt: mockEncrypt,
@@ -65,7 +72,7 @@ describe('~/fb-editor-console-electron/lib/token-file', () => {
       it('invokes `access`', () => {
         hasTokenFile()
 
-        expect(mockAccess).to.be.calledWith('./.token', 'mock okay')
+        expect(mockAccess).to.be.calledWith('mock token path', 'mock okay')
       })
     })
 
@@ -87,6 +94,9 @@ describe('~/fb-editor-console-electron/lib/token-file', () => {
     const mockFrom = sinon.stub()
     const mockBuffer = {}
 
+    const J = global.JSON
+    const B = global.Buffer
+
     beforeEach(async () => {
       mockEncrypt.returns('mock encrypted token')
       mockStringify.returns('mock json')
@@ -105,8 +115,10 @@ describe('~/fb-editor-console-electron/lib/token-file', () => {
 
     afterEach(() => {
       delete global.JSON
+      global.JSON = J
 
       delete global.Buffer
+      global.Buffer = B
     })
 
     it('assigns the token to the `token` field of an object and serialises it to JSON', () => {
@@ -122,7 +134,7 @@ describe('~/fb-editor-console-electron/lib/token-file', () => {
     })
 
     it('writes the token file', () => {
-      expect(mockWriteFile).to.be.calledWith('./.token', 'mock encrypted token')
+      expect(mockWriteFile).to.be.calledWith('mock token path', 'mock encrypted token')
     })
   })
 
@@ -134,6 +146,9 @@ describe('~/fb-editor-console-electron/lib/token-file', () => {
     const mockParse = sinon.stub()
     const mockFrom = sinon.stub()
     let returnValue
+
+    const J = global.JSON
+    const B = global.Buffer
 
     beforeEach(async () => {
       mockReadFile.returns(mockReadFileBuffer)
@@ -153,12 +168,14 @@ describe('~/fb-editor-console-electron/lib/token-file', () => {
 
     afterEach(() => {
       delete global.JSON
+      global.JSON = J
 
       delete global.Buffer
+      global.Buffer = B
     })
 
     it('reads the token file', () => {
-      expect(mockReadFile).to.be.calledWith('./.token')
+      expect(mockReadFile).to.be.calledWith('mock token path')
     })
 
     it('decrypts the file buffer', () => {

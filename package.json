@@ -1,6 +1,6 @@
 {
   "name": "@ministryofjustice/fb-editor-console-electron",
-  "version": "0.5.32",
+  "version": "0.5.33",
   "description": "Form Builder Console",
   "main": "./main.js",
   "scripts": {
@@ -24,7 +24,7 @@
     "test": "mocha test --recursive --require @ministryofjustice/module-alias/register",
     "transform": "npm run gulp -- transform",
     "gulp": "gulp --color",
-    "pre-commit": "npm run build && npm run transform && git add assets *.html",
+    "pre-commit": "npm run lint && npm test && npm run build && npm run transform && git add assets *.html",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
