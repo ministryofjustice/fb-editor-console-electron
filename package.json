@@ -54,7 +54,7 @@
     "selective-whitespace": "^1.0.4",
     "shelljs": "^0.8.3",
     "strip-ansi": "^6.0.0",
-    "yargs-parser": "^17.0.0"
+    "yargs-parser": "^17.0.1"
   },
   "devDependencies": {
     "@ministryofjustice/module-alias": "^1.0.11",
