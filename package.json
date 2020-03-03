@@ -36,7 +36,7 @@
     "Form Builder"
   ],
   "dependencies": {
-    "cross-env": "^7.0.0",
+    "cross-env": "^7.0.1",
     "electron-better-ipc": "^0.8.0",
     "electron-store": "^5.1.1",
     "electron-timber": "^0.5.1",
