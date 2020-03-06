@@ -3272,20 +3272,17 @@ only screen and (min-resolution:192dpi) {
   margin: 0;
   padding: 0;
   list-style: none;
-  -webkit-column-gap: 30px;
   -moz-column-gap: 30px;
   column-gap: 30px
 }
 
 @media (min-width:48.0625em) {
   .govuk-footer__list--columns-2 {
-    -webkit-column-count: 2;
     -moz-column-count: 2;
     column-count: 2
   }
 
   .govuk-footer__list--columns-3 {
-    -webkit-column-count: 3;
     -moz-column-count: 3;
     column-count: 3
   }
@@ -3938,6 +3935,51 @@ only screen and (min-resolution:192dpi) {
 
 .govuk-tag--inactive {
   background-color: #626a6e
+}
+
+.govuk-tag--grey {
+  color: #454a4d;
+  background: #eff0f1
+}
+
+.govuk-tag--purple {
+  color: #3d2375;
+  background: #dbd5e9
+}
+
+.govuk-tag--turquoise {
+  color: #10403c;
+  background: #bfe3e0
+}
+
+.govuk-tag--blue {
+  color: #144e81;
+  background: #d2e2f1
+}
+
+.govuk-tag--yellow {
+  color: #594d00;
+  background: #fff7bf
+}
+
+.govuk-tag--orange {
+  color: #6e3619;
+  background: #fcd6c3
+}
+
+.govuk-tag--red {
+  color: #942514;
+  background: #f6d7d2
+}
+
+.govuk-tag--pink {
+  color: #80224d;
+  background: #f7d7e6
+}
+
+.govuk-tag--green {
+  color: #005a30;
+  background: #cce2d8
 }
 
 .govuk-phase-banner {
@@ -4924,6 +4966,12 @@ only screen and (min-resolution:192dpi) {
 
 .govuk-\!-display-none {
   display: none!important
+}
+
+@media print {
+  .govuk-\!-display-none-print {
+    display: none!important
+  }
 }
 
 .govuk-\!-margin-0 {
