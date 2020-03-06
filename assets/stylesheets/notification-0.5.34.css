@@ -3272,17 +3272,20 @@ only screen and (min-resolution:192dpi) {
   margin: 0;
   padding: 0;
   list-style: none;
+  -webkit-column-gap: 30px;
   -moz-column-gap: 30px;
   column-gap: 30px
 }
 
 @media (min-width:48.0625em) {
   .govuk-footer__list--columns-2 {
+    -webkit-column-count: 2;
     -moz-column-count: 2;
     column-count: 2
   }
 
   .govuk-footer__list--columns-3 {
+    -webkit-column-count: 3;
     -moz-column-count: 3;
     column-count: 3
   }
