@@ -49,6 +49,8 @@ const store = new Store()
 
 logger.setDefaults({ logLevel: 'info' })
 
+git.plugins.set('fs', fs)
+
 const windows = {}
 const services = {}
 const serviceWindows = {}
