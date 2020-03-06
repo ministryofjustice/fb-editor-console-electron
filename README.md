@@ -1,6 +1,6 @@
 # fb-editor-console-electron
 
-## Form Builder Console
+## Form Builder Editor Console
 
 ![Console app](documentation/images/editor-console.png)
 
