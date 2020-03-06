@@ -3274,20 +3274,17 @@ only screen and (min-resolution:192dpi) {
   margin: 0;
   padding: 0;
   list-style: none;
-  -webkit-column-gap: 30px;
   -moz-column-gap: 30px;
   column-gap: 30px
 }
 
 @media (min-width:48.0625em) {
   .govuk-footer__list--columns-2 {
-    -webkit-column-count: 2;
     -moz-column-count: 2;
     column-count: 2
   }
 
   .govuk-footer__list--columns-3 {
-    -webkit-column-count: 3;
     -moz-column-count: 3;
     column-count: 3
   }
@@ -6274,39 +6271,4 @@ html.govuk-template {
     font-weight: 700
   }
 }
-
-.cell-nowrap a {
-  display: block
-}
-
-.cell-nowrap .hidden {
-  display: none
-}
-
-.invisible {
-  visibility: hidden
-}
-
-.formStatus {
-  display: inline-block;
-  padding: .25em .5em;
-  color: #000;
-  background-color: #fff;
-  border: 1px solid #000;
-  font-size: 12px;
-  text-transform: uppercase;
-  cursor: default;
-  min-width: 5rem;
-  text-align: center
-}
-
-.formStatus--starting {
-  background-color: #ffbf47
-}
-
-.formStatus--running {
-  background-color: #006435;
-  border-color: #006435;
-  color: #fff
-}
-/*# sourceMappingURL=app-0.5.33.css.map */
+/*# sourceMappingURL=create-0.5.34.css.map */

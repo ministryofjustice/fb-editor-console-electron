@@ -4,7 +4,7 @@
 
 ![Console app](documentation/images/editor-console.png)
 
-**Form Builder Console** is an Electron app for users to run **[Form Builder Editor](https://github.com/ministryofjustice/fb-editor-node)** locally.
+**Form Builder Editor Console** is an Electron app for users to run **[Form Builder Editor](https://github.com/ministryofjustice/fb-editor-node)** locally.
 
 (It's currently built for macOS only. [Let us know](mailto:form-builder-team@digital.justice.gov.uk) if you would use it for a different OS.)
 
@@ -46,7 +46,7 @@ You can create a repository on GitHub, too, but you will need to enter a _person
 
 ## Committing changes
 
-**Form Builder Console** does not currently provide a way to _commit_ or _push_ changes - you must use your own Git client.
+**Form Builder Editor Console** does not currently provide a way to _commit_ or _push_ changes - you must use your own Git client.
 
 ## License
 

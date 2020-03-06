@@ -1,6 +1,6 @@
 {
   "name": "@ministryofjustice/fb-editor-console-electron",
-  "version": "0.5.33",
+  "version": "0.5.34",
   "description": "Form Builder Console",
   "main": "./main.js",
   "scripts": {
@@ -57,7 +57,7 @@
     "yargs-parser": "^18.0.0"
   },
   "devDependencies": {
-    "@ministryofjustice/module-alias": "^1.0.11",
+    "@ministryofjustice/module-alias": "^1.0.12",
     "autoprefixer": "^9.7.4",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.0.6",
