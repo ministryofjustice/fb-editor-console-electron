@@ -44,7 +44,7 @@
     "glob-all": "^3.1.0",
     "govuk-frontend": "^3.6.0",
     "isomorphic-git": "0.78.5",
-    "open": "^7.0.2",
+    "open": "^7.0.3",
     "ospath": "^1.2.2",
     "path-exists": "^4.0.0",
     "request": "^2.88.2",
