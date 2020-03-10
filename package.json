@@ -89,7 +89,7 @@
     "postcss-normalize": "^8.0.1",
     "postcss-scss": "^2.0.0",
     "proxyquire": "^2.1.3",
-    "sinon": "^9.0.0",
+    "sinon": "^9.0.1",
     "sinon-chai": "^3.5.0",
     "stylelint": "^13.2.1",
     "stylelint-config-recommended-scss": "^4.2.0",
