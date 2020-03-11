@@ -26,8 +26,7 @@ const {
 } = require('./lib/common')
 
 const {
-  getOutWriteStream,
-  getErrWriteStream
+  getWriteStream
 } = require('./lib/common/write-stream')
 
 const {
@@ -48,8 +47,6 @@ const {
 const store = new Store()
 
 logger.setDefaults({ logLevel: 'info' })
-
-git.plugins.set('fs', fs)
 
 const windows = {}
 const services = {}
@@ -460,8 +457,8 @@ if (app.isPackaged || isLogToFile()) {
     if (code !== 'ENOENT') throw e
   }
 
-  const outStream = getOutWriteStream(outStreamPath)
-  const errStream = getErrWriteStream(errStreamPath)
+  const outStream = getWriteStream(outStreamPath)
+  const errStream = getWriteStream(errStreamPath)
 
   /*
    *  Bind console to `outStream` and `errStream`
