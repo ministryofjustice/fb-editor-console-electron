@@ -6323,38 +6323,7 @@ html.govuk-template {
   }
 }
 
-.cell-nowrap a {
-  display: block
+.govuk-tabs__panel p:last-of-type {
+  margin-bottom: 0
 }
-
-.cell-nowrap .hidden {
-  display: none
-}
-
-.invisible {
-  visibility: hidden
-}
-
-.formStatus {
-  display: inline-block;
-  padding: .25em .5em;
-  color: #000;
-  background-color: #fff;
-  border: 1px solid #000;
-  font-size: 12px;
-  text-transform: uppercase;
-  cursor: default;
-  min-width: 5rem;
-  text-align: center
-}
-
-.formStatus--starting {
-  background-color: #ffbf47
-}
-
-.formStatus--running {
-  background-color: #006435;
-  border-color: #006435;
-  color: #fff
-}
-/*# sourceMappingURL=app-0.5.36.css.map */
+/*# sourceMappingURL=settings-0.5.37.css.map */
