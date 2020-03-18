@@ -31,11 +31,13 @@ $govuk-assets-path: '../../assets/';
   text-align: center;
 }
 
-.formStatus--starting {
+.formStatus--starting,
+.fileUploadStatus--has-found-file-upload {
   background-color: #ffbf47;
 }
 
-.formStatus--running {
+.formStatus--running,
+.fileUploadStatus--has-updated-file-upload {
   background-color: #006435;
   border-color: #006435;
   color: #fff;

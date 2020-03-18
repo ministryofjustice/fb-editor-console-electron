@@ -6348,13 +6348,15 @@ html.govuk-template {
   text-align: center
 }
 
+.fileUploadStatus--has-found-file-upload,
 .formStatus--starting {
   background-color: #ffbf47
 }
 
+.fileUploadStatus--has-updated-file-upload,
 .formStatus--running {
   background-color: #006435;
   border-color: #006435;
   color: #fff
 }
-/*# sourceMappingURL=app-0.5.38.css.map */
+/*# sourceMappingURL=app-0.5.39.css.map */

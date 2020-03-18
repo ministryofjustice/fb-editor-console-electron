@@ -8,6 +8,11 @@ const fs = require('fs')
 const git = require('isomorphic-git')
 
 const {
+  hasFileUploadComponentInForm,
+  transformFileUploadComponentsInForm
+} = require('@ministryofjustice/fb-transformers/lib')
+
+const {
   app
 } = require('electron')
 
@@ -20,10 +25,18 @@ const {
 const Store = require('electron-store')
 
 const {
-  getDirectories,
+  getServicePath,
+  getServicePaths,
+  getServiceName,
   isLogToFile,
   isProbablyFirstUse
 } = require('./lib/common')
+
+const {
+  FILE_UPLOAD_NOT_FOUND,
+  HAS_FOUND_FILE_UPLOAD,
+  HAS_UPDATED_FILE_UPLOAD
+} = require('./lib/common/transform/file-upload')
 
 const {
   getWriteStream
@@ -43,6 +56,8 @@ const {
   initialiseRepository,
   initialiseRepositoryWithRemote
 } = require('./lib/github')
+
+const fileUploadComponentsMap = new Map()
 
 const store = new Store()
 
@@ -64,6 +79,7 @@ const {
   getPort,
   setPort,
   clearPortFor,
+  listServicesInMainWindow,
   confirmServiceIsRunning,
   install,
   updateEditor,
@@ -166,6 +182,14 @@ ipcMain.answerRenderer('go-to-create', () => {
   }
 })
 
+function deleteService (serviceName) {
+  const { paths: { services } } = app
+
+  const servicePath = getServicePath(services, serviceName)
+
+  return new Promise((resolve, reject) => rimraf(servicePath, (e) => (!e) ? resolve() : reject(e)))
+}
+
 async function clearPorts () {
   const ports = store.get('ports') || {}
 
@@ -223,6 +247,20 @@ async function launchApp () {
     if (!mainWindow) createMainWindow()
   })
 
+  app.transformFileUploadComponentsInForm = async (service) => {
+    const { paths: { services } } = app
+
+    const servicePath = getServicePath(services, service)
+
+    logger.log(`Transforming service "${service}" at "${servicePath}" ...`)
+
+    await transformFileUploadComponentsInForm(servicePath)
+
+    logger.log(`Service "${service}" transformed`)
+
+    fileUploadComponentsMap.set(service, HAS_UPDATED_FILE_UPLOAD)
+  }
+
   app.launchService = async (service) => {
     const serviceDetails = services[service]
 
@@ -246,7 +284,9 @@ async function launchApp () {
         else setPort(service, port)
       }
 
-      const path = `${app.paths.services}/${service}`
+      const { paths: { services } } = app
+
+      const path = getServicePath(services, service)
 
       serviceDetails.name = service
       serviceDetails.port = port
@@ -333,9 +373,7 @@ async function launchApp () {
   app.deleteService = async (serviceName) => {
     await app.stopService(serviceName)
 
-    const servicePath = path.join(app.paths.services, serviceName)
-
-    rimraf.sync(servicePath)
+    await deleteService(serviceName)
 
     const ports = store.get('ports') || {}
 
@@ -353,6 +391,28 @@ async function launchApp () {
   if (!mainWindow) createMainWindow()
 }
 
+async function populateFileUploadComponentsMap () {
+  const { paths: { services } } = app
+
+  await Promise
+    .all(
+      getServicePaths(services)
+        .map(async (servicePath) => {
+          try {
+            const hasFileUpload = await hasFileUploadComponentInForm(servicePath)
+            const serviceName = getServiceName(servicePath)
+
+            fileUploadComponentsMap.set(serviceName, hasFileUpload ? HAS_FOUND_FILE_UPLOAD : FILE_UPLOAD_NOT_FOUND)
+          } catch ({ message }) {
+            logger.error(message)
+            const serviceName = getServiceName(servicePath)
+
+            fileUploadComponentsMap.set(serviceName, FILE_UPLOAD_NOT_FOUND)
+          }
+        })
+    )
+}
+
 async function initialise () {
   createNotificationWindow()
 
@@ -368,6 +428,10 @@ async function initialise () {
   }
 
   await launchApp()
+
+  await populateFileUploadComponentsMap()
+
+  listServicesInMainWindow(services)
 }
 
 const sleep = (t = 3000) => new Promise(resolve => { setTimeout(resolve, t) })
@@ -377,6 +441,7 @@ app.store = store
 app.windows = windows
 app.services = services
 app.paths = paths
+app.fileUploadComponentsMap = fileUploadComponentsMap
 
 // https://github.com/electron/electron/issues/18397
 app.allowRendererProcessReuse = true
@@ -437,6 +502,13 @@ ipcMain.answerRenderer('getServices', () => services)
   execSync(`mkdir -p ${formBuilderPath}`)
   execSync(`mkdir -p ${logPath}`)
   execSync(`mkdir -p ${servicesPath}`)
+
+  getServicePaths(servicesPath)
+    .forEach((servicePath) => {
+      const serviceName = getServiceName(servicePath)
+
+      services[serviceName] = {}
+    })
 }
 
 if (app.isPackaged || isLogToFile()) {
@@ -471,10 +543,5 @@ if (app.isPackaged || isLogToFile()) {
   process.__defineGetter__('stdout', () => outStream)
   process.__defineGetter__('stderr', () => errStream)
 }
-
-getDirectories(app.paths.services)
-  .forEach((service) => {
-    services[service] = {}
-  })
 
 logger.log('Waking up ...')
