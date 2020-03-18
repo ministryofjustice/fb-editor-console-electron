@@ -4,7 +4,7 @@
   "description": "Form Builder Console",
   "main": "./main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "DEBUG=transformers* electron .",
     "build": "cross-env NODE_ENV=production concurrently -r \"npm run gulp -- build\" \"webpack\"",
     "build:watch": "cross-env NODE_ENV=production concurrently -r \"npm run gulp -- build:watch\" \"webpack --watch\"",
     "build:fonts": "npm run gulp -- build:fonts",
@@ -36,6 +36,7 @@
     "Form Builder"
   ],
   "dependencies": {
+    "@ministryofjustice/fb-transformers": "^1.0.1",
     "cross-env": "^7.0.2",
     "electron-better-ipc": "^0.8.0",
     "electron-store": "^5.1.1",
