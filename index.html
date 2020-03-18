@@ -151,21 +151,21 @@
        *  App
        */
       const {
+        updateFileUploadComponentsInForm,
         startForm,
         stopForm,
         openForm,
         deleteForm,
         reloadPage,
-        listServices,
-        updateFileUploadComponentsInForm
+        listServices
       } = require('./lib/forms')
 
+      global.updateFileUploadComponentsInForm = updateFileUploadComponentsInForm
       global.startForm = startForm
       global.stopForm = stopForm
       global.openForm = openForm
       global.deleteForm = deleteForm
       global.reloadPage = reloadPage
-      global.updateFileUploadComponentsInForm = updateFileUploadComponentsInForm
 
       logger.log('Listing services ...')
 
