@@ -18,7 +18,7 @@ Alternatively:
 - Double-click the zip file to expand the app
 - Move the `Form Builder Console` app to the `Applications` directory
 
-The app is signed by [Sequence Media Limited](https://github.com/sequencemedia) on behalf of the Ministry of Justice.
+The app is signed by the Ministry of Justice.
 
 ## Usage
 
