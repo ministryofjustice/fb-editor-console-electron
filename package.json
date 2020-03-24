@@ -97,7 +97,7 @@
     "stylelint-scss": "^3.16.0",
     "terser-webpack-plugin": "^2.3.5",
     "vinyl-paths": "^3.0.1",
-    "webpack": "^4.42.0",
+    "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",
     "webpack-merge": "^4.2.2"
   },
