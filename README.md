@@ -10,15 +10,9 @@
 
 ## Installation
 
-The preferred way to install is through the MoJ's `Self Service` application.
+Unfortunately the releases 0.5.40 and 0.5.39 have broken installation processes. Please do not try to install these releases.
 
-Alternatively:
-
-- Download [the latest release from GitHub](https://github.com/ministryofjustice/fb-editor-console-electron/releases)
-- Double-click the zip file to expand the app
-- Move the `Form Builder Console` app to the `Applications` directory
-
-The app is signed by the Ministry of Justice.
+If you already have an installation of the editor do not update it at this time.
 
 ## Usage
 
