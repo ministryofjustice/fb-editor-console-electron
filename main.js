@@ -83,7 +83,6 @@ const {
   confirmServiceIsRunning,
   install,
   updateEditor,
-  reinstallEditor,
   installEditor,
   installEditorDependencies,
   displayNotification,
@@ -137,8 +136,6 @@ ipcMain.on('go-to-create', goToCreate)
 ipcMain.on('go-to-index', goToIndex)
 
 ipcMain.answerRenderer('update-editor', updateEditor)
-
-ipcMain.answerRenderer('reinstall-editor', reinstallEditor)
 
 ipcMain.answerRenderer('install-editor', installEditor)
 
