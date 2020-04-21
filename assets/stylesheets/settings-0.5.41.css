@@ -6322,4 +6322,8 @@ html.govuk-template {
     font-weight: 700
   }
 }
-/*# sourceMappingURL=add-0.5.40.css.map */
+
+.govuk-tabs__panel p:last-of-type {
+  margin-bottom: 0
+}
+/*# sourceMappingURL=settings-0.5.41.css.map */
