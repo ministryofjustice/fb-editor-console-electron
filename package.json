@@ -94,7 +94,7 @@
     "sinon-chai": "^3.5.0",
     "stylelint": "^13.3.2",
     "stylelint-config-recommended-scss": "^4.2.0",
-    "stylelint-scss": "^3.17.0",
+    "stylelint-scss": "^3.17.1",
     "terser-webpack-plugin": "^2.3.5",
     "vinyl-paths": "^3.0.1",
     "webpack": "^4.42.1",
