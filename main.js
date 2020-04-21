@@ -83,7 +83,6 @@ const {
   confirmServiceIsRunning,
   install,
   updateEditor,
-  reinstallEditor,
   installEditor,
   installEditorDependencies,
   displayNotification,
@@ -137,8 +136,6 @@ ipcMain.on('go-to-create', goToCreate)
 ipcMain.on('go-to-index', goToIndex)
 
 ipcMain.answerRenderer('update-editor', updateEditor)
-
-ipcMain.answerRenderer('reinstall-editor', reinstallEditor)
 
 ipcMain.answerRenderer('install-editor', installEditor)
 
@@ -479,7 +476,7 @@ ipcMain.answerRenderer('setServiceProperty', async ({ service, property, value }
 ipcMain.answerRenderer('getServices', () => services)
 
 {
-  const homeDir = path.join(ospath.home(), 'documents')
+  const homeDir = path.join(ospath.home(), 'Documents')
 
   const formBuilderPath = path.join(homeDir, 'formbuilder')
   app.paths.formbuilder = formBuilderPath

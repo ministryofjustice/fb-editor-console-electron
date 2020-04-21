@@ -27,7 +27,6 @@ const {
   dismissNotification,
   executeInstallation,
   updateEditor,
-  reinstallEditor,
   installEditor,
   installEditorDependencies
 } = proxyquire('~/lib/main', {
@@ -82,8 +81,6 @@ describe('~/fb-editor-console-electron/lib/main', () => {
     it('exports the `executeInstallation` function', () => expect(executeInstallation).to.be.a('function'))
 
     it('exports the `updateEditor` function', () => expect(updateEditor).to.be.a('function'))
-
-    it('exports the `reinstallEditor` function', () => expect(reinstallEditor).to.be.a('function'))
 
     it('exports the `installEditor` function', () => expect(installEditor).to.be.a('function'))
 
