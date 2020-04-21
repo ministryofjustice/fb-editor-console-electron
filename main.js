@@ -476,7 +476,7 @@ ipcMain.answerRenderer('setServiceProperty', async ({ service, property, value }
 ipcMain.answerRenderer('getServices', () => services)
 
 {
-  const homeDir = path.join(ospath.home(), 'documents')
+  const homeDir = path.join(ospath.home(), 'Documents')
 
   const formBuilderPath = path.join(homeDir, 'formbuilder')
   app.paths.formbuilder = formBuilderPath
