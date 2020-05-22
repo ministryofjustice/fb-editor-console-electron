@@ -440,9 +440,6 @@ app.services = services
 app.paths = paths
 app.fileUploadComponentsMap = fileUploadComponentsMap
 
-// https://github.com/electron/electron/issues/18397
-app.allowRendererProcessReuse = true
-
 app.on('ready', async () => {
   logger.log('Hello!')
 
