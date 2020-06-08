@@ -39,7 +39,7 @@
     "@ministryofjustice/fb-transformers": "^1.0.4",
     "cross-env": "^7.0.2",
     "electron-better-ipc": "^1.0.1",
-    "electron-store": "^5.1.1",
+    "electron-store": "^5.2.0",
     "electron-timber": "^0.5.1",
     "find-process": "^1.4.3",
     "glob-all": "^3.2.1",
