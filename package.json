@@ -36,7 +36,7 @@
     "Form Builder"
   ],
   "dependencies": {
-    "@ministryofjustice/fb-transformers": "^1.0.4",
+    "@ministryofjustice/fb-transformers": "^1.0.5",
     "cross-env": "^7.0.2",
     "electron-better-ipc": "^1.0.1",
     "electron-store": "^5.2.0",
