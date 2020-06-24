@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@ministryofjustice/module-alias": "^1.0.15",
-    "autoprefixer": "^9.8.2",
+    "autoprefixer": "^9.8.3",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.1.0",
     "chai": "^4.2.0",
