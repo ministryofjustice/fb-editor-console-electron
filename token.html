@@ -147,7 +147,7 @@
           </div>
         </div>
 
-        <h1 class="govuk-heading-xl">GitHub personal access token and password</h1>
+        <h1 class="govuk-heading-xl">GitHub personal access token</h1>
 
         <form id="token-form" method="post" action="./settings.html">
           <div class="govuk-form-group personal-access-token-group">
@@ -157,29 +157,14 @@
           </div>
 
           <div class="govuk-form-group access-token-password-group">
-            <label class="govuk-label" for="access-token-password">Password</label>
+            <label class="govuk-label" for="access-token-password">Create password</label>
+            <span class="govuk-hint">This is to make sure that Form Builder is secure on your computer</span>
             <span id="access-token-password-error" class="govuk-error-message">Enter an access token password</span>
             <input class="govuk-input govuk-input--width-10" type="password" id="access-token-password" name="access-token-password" />
           </div>
 
           <button class="govuk-button" data-module="govuk-button" type="submit" id="save-user-settings">Save</button>
         </form>
-
-        <div class="govuk-inset-text">
-          <h3>About the GitHub personal access token</h3>
-          <p>
-            Your access token should be created with the
-            <b>public_repo</b> scope.
-          </p>
-          <a id="token-how-to" href="#">How to create a GitHub access token</a>
-        </div>
-
-        <div class="govuk-inset-text">
-          <h3>About the access token password</h3>
-          <p>
-            The password is used to securely store the GitHub access token for this application. We recommend creating a strong password and keeping it safe with a password manager such as LastPass.
-          </p>
-        </div>
 
       </main>
     </div>
