@@ -188,35 +188,30 @@
               </section>
 
               <section class="govuk-tabs__panel" id="git-auth">
-                <div id="has-git-auth" class="js-hidden">
-                  <h1 class="govuk-heading-m">
-                    GitHub personal access token
-                  </h1>
+                <p class="govuk-body govuk-!-margin-bottom-5">
+                  To create a personal access token you need to complete the following steps.
+                </p>
 
-                  <p class="govuk-body">
-                    You have a personal access token associated with this device.
-                  </p>
-
-                  <p class="govuk-body">
-                    You can
-                    <a href="./token.html" id="change-access-token">change it</a>.
-                  </p>
-                </div>
-
-                <div id="not-git-auth" class="js-hidden">
-                  <h1 class="govuk-heading-m">
-                    GitHub personal access token
-                  </h1>
-
-                  <p class="govuk-body">
-                    You do not have a personal access token associated with this device.
-                  </p>
-
-                  <p class="govuk-body">
-                    You can
-                    <a href="./token.html" id="create-access-token">create one</a>.
-                  </p>
-                </div>
+                <ol class="govuk-list govuk-list--number">
+                  <li>
+                    Sign in to <a href="#" id="github">GitHub</a>, or create an account
+                  </li>
+                  <li>
+                    Go to the <a href="#" id="generate-token">personal access token page</a>
+                    <br />
+                    Enter 'form builder token' in the Note field
+                    <br />
+                    Select 'public_repo'
+                    <br />
+                    Scroll down to the bottom of the page and select 'Generate token'
+                  </li>
+                  <li>
+                    Copy the personal access token
+                  </li>
+                  <li>
+                    Enter the <a href="./token.html" id="create-access-token">personal access token</a>
+                  </li>
+                </ol>
               </section>
 
               <section

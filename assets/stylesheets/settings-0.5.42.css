@@ -4260,8 +4260,7 @@ only screen and (min-resolution:192dpi) {
 
 .govuk-tabs__tab {
   display: inline-block;
-  margin-bottom: 10px;
-  margin: 0
+  margin-bottom: 10px
 }
 
 .govuk-tabs__tab:link {
