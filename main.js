@@ -493,9 +493,9 @@ ipcMain.answerRenderer('getServices', () => services)
   const servicesPath = path.join(formBuilderPath, 'forms')
   app.paths.services = servicesPath
 
-  execSync(`mkdir -p ${formBuilderPath}`)
-  execSync(`mkdir -p ${logPath}`)
-  execSync(`mkdir -p ${servicesPath}`)
+  fs.mkdirSync(formBuilderPath, { recursive: true })
+  fs.mkdirSync(logPath, { recursive: true })
+  fs.mkdirSync(servicesPath, { recursive: true })
 
   getServicePaths(servicesPath)
     .forEach((servicePath) => {
