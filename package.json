@@ -38,7 +38,7 @@
   "dependencies": {
     "@ministryofjustice/fb-transformers": "^1.0.7",
     "cross-env": "^7.0.2",
-    "electron-better-ipc": "^1.1.0",
+    "electron-better-ipc": "^1.1.1",
     "electron-store": "^6.0.0",
     "electron-timber": "^0.5.1",
     "find-process": "^1.4.3",
