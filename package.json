@@ -56,7 +56,7 @@
     "shelljs": "^0.8.4",
     "simple-git": "^2.20.1",
     "strip-ansi": "^6.0.0",
-    "yargs-parser": "^19.0.1"
+    "yargs-parser": "^19.0.4"
   },
   "devDependencies": {
     "@ministryofjustice/module-alias": "^1.0.16",
