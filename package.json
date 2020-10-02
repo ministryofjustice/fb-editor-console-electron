@@ -59,7 +59,7 @@
     "yargs-parser": "^20.2.0"
   },
   "devDependencies": {
-    "@ministryofjustice/module-alias": "^1.0.17",
+    "@ministryofjustice/module-alias": "^1.0.18",
     "autoprefixer": "^9.8.6",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.1.0",
