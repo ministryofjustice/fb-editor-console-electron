@@ -87,7 +87,7 @@
     "gulp-sass": "^4.1.0",
     "gulp-sourcemaps": "^2.6.5",
     "husky": "^4.3.0",
-    "mocha": "^8.2.0",
+    "mocha": "^8.2.1",
     "postcss-normalize": "^9.0.0",
     "postcss-scss": "^3.0.2",
     "proxyquire": "^2.1.3",
