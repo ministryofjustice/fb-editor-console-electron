@@ -86,7 +86,7 @@
     "gulp-rename": "^2.0.0",
     "gulp-sass": "^4.1.0",
     "gulp-sourcemaps": "^3.0.0",
-    "husky": "^4.3.7",
+    "husky": "^4.3.8",
     "mocha": "^8.2.1",
     "postcss-normalize": "^9.0.0",
     "postcss-scss": "^3.0.4",
