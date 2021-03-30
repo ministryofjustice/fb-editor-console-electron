@@ -1,6 +1,6 @@
 {
   "name": "@ministryofjustice/fb-editor-console-electron",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Form Builder Console",
   "main": "./main.js",
   "scripts": {
@@ -36,7 +36,7 @@
     "Form Builder"
   ],
   "dependencies": {
-    "@ministryofjustice/fb-transformers": "^1.0.7",
+    "@ministryofjustice/fb-transformers": "^1.0.8",
     "cross-env": "^7.0.3",
     "electron-better-ipc": "^1.1.1",
     "electron-store": "^6.0.1",
@@ -59,7 +59,7 @@
     "yargs-parser": "^20.2.4"
   },
   "devDependencies": {
-    "@ministryofjustice/module-alias": "^1.0.18",
+    "@ministryofjustice/module-alias": "^1.0.19",
     "autoprefixer": "^9.8.6",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.2.2",
