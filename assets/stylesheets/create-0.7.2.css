@@ -40,7 +40,6 @@ pre {
 
 abbr[title] {
   text-decoration: underline;
-  -webkit-text-decoration: underline dotted;
   text-decoration: underline dotted
 }
 
@@ -217,7 +216,8 @@ template {
   outline: 3px solid transparent;
   background-color: #fd0;
   box-shadow: 0 -2px #fd0,0 4px #0b0c0c;
-  text-decoration: none
+  text-decoration: none;
+  color: #0b0c0c
 }
 
 .govuk-link:link {
@@ -232,8 +232,7 @@ template {
   color: #003078
 }
 
-.govuk-link:active,
-.govuk-link:focus {
+.govuk-link:active {
   color: #0b0c0c
 }
 
@@ -254,7 +253,10 @@ template {
   color: #505a5f
 }
 
-.govuk-link--muted:focus,
+.govuk-link--muted:focus {
+  color: #0b0c0c
+}
+
 .govuk-link--text-colour:active,
 .govuk-link--text-colour:focus,
 .govuk-link--text-colour:hover,
@@ -282,9 +284,11 @@ template {
   color: #003078
 }
 
-.govuk-link--no-visited-state:active,
-.govuk-link--no-visited-state:focus,
-.govuk-list {
+.govuk-link--no-visited-state:active {
+  color: #0b0c0c
+}
+
+.govuk-link--no-visited-state:focus {
   color: #0b0c0c
 }
 
@@ -295,6 +299,7 @@ template {
   font-weight: 400;
   font-size: 1rem;
   line-height: 1.25;
+  color: #0b0c0c;
   margin-top: 0;
   margin-bottom: 15px;
   padding-left: 0;
@@ -370,9 +375,6 @@ template {
 
 .govuk-template {
   background-color: #f3f2f1;
-  -webkit-text-size-adjust: 100%;
-  -moz-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;
   text-size-adjust: 100%
 }
 
@@ -1321,7 +1323,8 @@ template {
   outline: 3px solid transparent;
   background-color: #fd0;
   box-shadow: 0 -2px #fd0,0 4px #0b0c0c;
-  text-decoration: none
+  text-decoration: none;
+  color: #0b0c0c
 }
 
 .js-enabled .govuk-accordion__open-all:link {
@@ -1336,8 +1339,7 @@ template {
   color: #003078
 }
 
-.js-enabled .govuk-accordion__open-all:active,
-.js-enabled .govuk-accordion__open-all:focus {
+.js-enabled .govuk-accordion__open-all:active {
   color: #0b0c0c
 }
 
@@ -2138,8 +2140,11 @@ template {
   }
 }
 
-.govuk-fieldset__legend:not(.govuk-fieldset__legend--m):not(.govuk-fieldset__legend--l):not(.govuk-fieldset__legend--xl) + .govuk-hint,
 .govuk-label:not(.govuk-label--m):not(.govuk-label--l):not(.govuk-label--xl) + .govuk-hint {
+  margin-bottom: 10px
+}
+
+.govuk-fieldset__legend:not(.govuk-fieldset__legend--m):not(.govuk-fieldset__legend--l):not(.govuk-fieldset__legend--xl) + .govuk-hint {
   margin-bottom: 10px
 }
 
@@ -2364,22 +2369,21 @@ template {
 }
 
 .govuk-checkboxes__label:before {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
   top: 0;
   left: 0;
   width: 40px;
   height: 40px;
-  border: 2px solid
-}
-
-.govuk-checkboxes__label:after,
-.govuk-checkboxes__label:before {
-  content: "";
-  box-sizing: border-box;
-  position: absolute;
+  border: 2px solid;
   background: 0 0
 }
 
 .govuk-checkboxes__label:after {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
   top: 11px;
   left: 9px;
   width: 23px;
@@ -2388,7 +2392,8 @@ template {
   border: solid;
   border-width: 0 0 5px 5px;
   border-top-color: transparent;
-  opacity: 0
+  opacity: 0;
+  background: 0 0
 }
 
 .govuk-checkboxes__hint {
@@ -6366,4 +6371,4 @@ html.govuk-template {
     font-weight: 700
   }
 }
-/*# sourceMappingURL=add-0.7.1.css.map */
+/*# sourceMappingURL=create-0.7.2.css.map */
