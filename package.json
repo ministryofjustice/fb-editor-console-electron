@@ -53,7 +53,7 @@
     "rimraf": "^3.0.2",
     "sacred-fs": "^1.2.1",
     "selective-whitespace": "^1.0.4",
-    "shelljs": "^0.8.4",
+    "shelljs": "^0.8.5",
     "simple-git": "^2.26.0",
     "strip-ansi": "^6.0.0",
     "yargs-parser": "^20.2.4"
