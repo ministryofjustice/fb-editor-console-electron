@@ -36,7 +36,7 @@
     "Form Builder"
   ],
   "dependencies": {
-    "@ministryofjustice/fb-transformers": "^1.0.9",
+    "@ministryofjustice/fb-transformers": "^1.0.11",
     "cross-env": "^7.0.3",
     "electron-better-ipc": "^1.1.1",
     "electron-store": "^6.0.1",
@@ -59,7 +59,7 @@
     "yargs-parser": "^21.0.0"
   },
   "devDependencies": {
-    "@ministryofjustice/module-alias": "^1.0.19",
+    "@ministryofjustice/module-alias": "^1.0.21",
     "autoprefixer": "^9.8.8",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.2.2",

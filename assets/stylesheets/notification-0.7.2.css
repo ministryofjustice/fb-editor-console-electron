@@ -38,6 +38,7 @@ pre {
 
 abbr[title] {
   text-decoration: underline;
+  -webkit-text-decoration: underline dotted;
   text-decoration: underline dotted
 }
 
@@ -373,6 +374,7 @@ template {
 
 .govuk-template {
   background-color: #f3f2f1;
+  -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%
 }
 
