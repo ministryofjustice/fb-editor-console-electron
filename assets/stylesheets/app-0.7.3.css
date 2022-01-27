@@ -6373,4 +6373,41 @@ html.govuk-template {
     font-weight: 700
   }
 }
-/*# sourceMappingURL=token-0.7.2.css.map */
+
+.cell-nowrap a {
+  display: block
+}
+
+.cell-nowrap .hidden {
+  display: none
+}
+
+.invisible {
+  visibility: hidden
+}
+
+.formStatus {
+  display: inline-block;
+  padding: .25em .5em;
+  color: #000;
+  background-color: #fff;
+  border: 1px solid #000;
+  font-size: 12px;
+  text-transform: uppercase;
+  cursor: default;
+  min-width: 5rem;
+  text-align: center
+}
+
+.fileUploadStatus--has-found-file-upload,
+.formStatus--starting {
+  background-color: #ffbf47
+}
+
+.fileUploadStatus--has-updated-file-upload,
+.formStatus--running {
+  background-color: #006435;
+  border-color: #006435;
+  color: #fff
+}
+/*# sourceMappingURL=app-0.7.3.css.map */
