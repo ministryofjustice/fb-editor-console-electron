@@ -55,7 +55,7 @@
     "selective-whitespace": "^1.0.4",
     "shelljs": "^0.8.5",
     "simple-git": "^2.26.0",
-    "strip-ansi": "^6.0.0",
+    "strip-ansi": "^7.0.1",
     "yargs-parser": "^21.0.0"
   },
   "devDependencies": {
