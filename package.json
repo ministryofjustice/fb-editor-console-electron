@@ -54,7 +54,7 @@
     "sacred-fs": "^1.2.106",
     "selective-whitespace": "^1.0.4",
     "shelljs": "^0.8.5",
-    "simple-git": "^2.26.0",
+    "simple-git": "^3.7.1",
     "strip-ansi": "^6.0.0",
     "yargs-parser": "^21.0.0"
   },
