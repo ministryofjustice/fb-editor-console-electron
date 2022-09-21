@@ -51,7 +51,7 @@
     "request": "^2.88.2",
     "request-promise-native": "^1.0.9",
     "rimraf": "^3.0.2",
-    "sacred-fs": "^1.2.106",
+    "sacred-fs": "^1.3.92",
     "selective-whitespace": "^1.0.4",
     "shelljs": "^0.8.5",
     "simple-git": "^2.26.0",
