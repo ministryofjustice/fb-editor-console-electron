@@ -50,7 +50,7 @@
     "path-exists": "^4.0.0",
     "request": "^2.88.2",
     "request-promise-native": "^1.0.9",
-    "rimraf": "^3.0.2",
+    "rimraf": "^4.0.7",
     "sacred-fs": "^1.2.106",
     "selective-whitespace": "^1.0.4",
     "shelljs": "^0.8.5",
